@@ -20,3 +20,33 @@
 .App-link {
   color: #09d3ac;
 }
+
+.mapboxgl-popup-content {
+  padding: 0px !important;
+  border-radius: 3px !important;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.countryPopup .name {
+  padding: 0px 4px;
+  background: midnightblue;
+  color: white;
+}
+
+.countryPopup .stats {
+  padding: 0px 4px;
+}
+
+.countryPopup .stat {
+  padding-left:1px;
+  padding-right:4px;
+}
+
+.countryPopup .new {
+  color: green;
+}
+
+.countryPopup .deleted {
+  color: red;
+}
