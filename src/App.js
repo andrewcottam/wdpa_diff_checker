@@ -29,25 +29,25 @@ const PAINT_WDPA_DEFAULT = { "fill-color": { "type": "categorical", "property": 
       ["0", "rgb(99,148,69)"],
       ["1", "rgb(63,127,191)"],
       ["2", "rgb(63,127,191)"]
-    ] }, "fill-opacity": 1 };
-const PAINT_WDPA_RED = { "fill-color": "rgb(255,0,0)" };
+    ] }, "fill-opacity": 0.3 };
+const PAINT_WDPA_RED = { "fill-color": "rgba(255,0,0,0.3)" };
 const VERSIONS = ["aug_2019", "sep_2019"];
 
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { fromVersion: "", toVersion: "", countries: []};
+    this.state = { fromVersion: "", toVersion: "", countries: [], newFilter: [], deletedFilter: [], changedFilter: []};
   }
   componentDidMount() {
     this.getCountries();
     this.setState({ fromVersion: VERSIONS[0], toVersion: VERSIONS[1] });
   }
-  mapMoveStart() {
+  hideCountryPopups() {
     //hide any popups as they cause the map to lag because they are all rerendered continually
     this._countries = this.state.countries;
     this.setState({ countries: [] });
   }
-  mapMoveEnd() {
+  showCountryPopups() {
     //restore the country popups
     this.setState({ countries: this._countries });
   }
@@ -80,30 +80,48 @@ class App extends React.Component {
     });
   }
   clickCountryPopup(country) {
-    this.setState({country: country});
+    this.hideCountryPopups();
+    this.setState({country: country, bounds: [[country.west, country.south],[country.east,country.north]]}, () =>{
+      //initialise country stuff
+      this._get(REST_BASE_URL + "get_wdpa_diff2?format=json&iso3=" + country.iso3).then(response => {
+        if (response.records.length>0){
+          response.records.map(record => {
+          switch (record.status) {
+            case 'new':
+              //set the filters on the various layers
+              this.setState({newFilter: ['all', ['in', 'wdpaid'].concat(record.wdpaids)]});
+              break;
+            case 'deleted':
+              //set the filters on the various layers
+              this.setState({deletedFilter: ['all', ['in', 'wdpaid'].concat(record.wdpaids)]});
+              break;
+            case 'changed':
+              //set the filters on the various layers
+              this.setState({changedFilter: ['all', ['in', 'wdpaid'].concat(record.wdpaids)]});
+              break;
+            default:
+              // code
+          }  
+          });
+        }
+      });
+    });
   }
   render() {
     let countryPopups = this.state.countries.map(country => {
       return (country.centroid) ? <CountryPopup country={country} key={country.iso3} clickCountryPopup={this.clickCountryPopup.bind(this)}/> : null;
     });
     return (
-      //[[this.state.country.west,this.state.country.south],[this.state.country.east,this.state.country.north]]
+      //<GeoJSONLayer data={geojson} symbolLayout={{"text-field": "{name}","text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],"text-offset": [0, 0.6],"text-anchor": "top"}}/>        
       // eslint-disable-next-line
-      <Map style={MAP_STYLE_DEFAULT} containerStyle={{height: '100vh',width: '100vw'}} center={INITIAL_CENTER} zoom={INITIAL_ZOOM} onMoveStart={this.mapMoveStart.bind(this)} onMoveEnd={this.mapMoveEnd.bind(this)}>
+      <Map style={MAP_STYLE_DEFAULT} containerStyle={{height: '100vh',width: '100vw'}} center={INITIAL_CENTER} zoom={INITIAL_ZOOM} onMoveStart={this.hideCountryPopups.bind(this)} onMoveEnd={this.showCountryPopups.bind(this)} fitBounds={this.state.bounds}>
         <Source id={SOURCE_NAME_FROM} tileJsonSource={{type: "vector", attribution: "wdpa", tiles: [ TILES_BASE_URL + "wdpa_" + this.state.fromVersion + "_polygons&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]}}/>
         <Source id={SOURCE_NAME_TO} tileJsonSource={{type: "vector", attribution: "wdpa", tiles: [ TILES_BASE_URL + "wdpa_" + this.state.toVersion + "_polygons&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}"]}}/>
-        <Layer id={LAYER_NAME_FROM} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "visible"}} paint={PAINT_WDPA_RED}/>
-        <Layer id={LAYER_NAME_FROM_DELETED} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "none"}} paint={PAINT_WDPA_RED}/>
-        <Layer id={LAYER_NAME_TO} sourceId={SOURCE_NAME_TO} type="fill" sourceLayer={"wdpa_" + this.state.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={PAINT_WDPA_DEFAULT}/>
-        <Layer id={LAYER_NAME_TO_CHANGED} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "none"}} paint={PAINT_WDPA_RED}/>
-        <Layer id={LAYER_NAME_TO_NEW} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "none"}} paint={PAINT_WDPA_RED}/>
-        <GeoJSONLayer data={geojson}
-          symbolLayout={{
-            "text-field": "{name}",
-            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-            "text-offset": [0, 0.6],
-            "text-anchor": "top"
-          }}/>        
+        <Layer id={LAYER_NAME_FROM} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "none"}} paint={PAINT_WDPA_DEFAULT}/>
+        <Layer id={LAYER_NAME_FROM_DELETED} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "visible"}} paint={PAINT_WDPA_RED} filter={this.state.deletedFilter}/>
+        <Layer id={LAYER_NAME_TO} sourceId={SOURCE_NAME_TO} type="fill" sourceLayer={"wdpa_" + this.state.toVersion + "_polygons"} layout={{visibility: "none"}} paint={PAINT_WDPA_DEFAULT}/>
+        <Layer id={LAYER_NAME_TO_CHANGED} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "visible"}} paint={PAINT_WDPA_DEFAULT} filter={this.state.changedFilter}/>
+        <Layer id={LAYER_NAME_TO_NEW} sourceId={SOURCE_NAME_FROM} type="fill" sourceLayer={"wdpa_" + this.state.fromVersion + "_polygons"} layout={{visibility: "visible"}} paint={PAINT_WDPA_DEFAULT} filter={this.state.newFilter}/>
         {countryPopups}
       </Map>
     );
