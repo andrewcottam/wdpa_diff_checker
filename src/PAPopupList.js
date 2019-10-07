@@ -8,7 +8,7 @@ const LAYER_NAME_TO_CHANGED = "to_changed";
 class PAPopupList extends React.Component {
 	getPopup(feature){ //single feature under mouse
 		//get the data for the feature under the mouse
-		let pa_data = this.props.protected_areas_data.find(pa => pa.wdpaid === Number(feature.properties.wdpaid)); //wdpaid is BigDecimal in Geoserver by default and this gets parsed to a string type
+		let pa_data = this.props.protected_areas_data && this.props.protected_areas_data.find(pa => pa.wdpaid === Number(feature.properties.wdpaid)); //wdpaid is BigDecimal in Geoserver by default and this gets parsed to a string type
 		switch (feature.layer.id) {
 			case LAYER_NAME_FROM:
 				return <div className={'wdpaPopup'}><a href={"https://www.protectedplanet.net/" + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title='Click to open the protected area in the Protected Planet website'>{feature.properties.name}<span style={{paddingRight:'5px'}}/>({feature.properties.iucn_cat})</a></div>;
@@ -32,7 +32,7 @@ class PAPopupList extends React.Component {
 				//geometry changes
 				if (pa_data.geometry_change) {
 					//geometry has changed
-					geometryRows = (attributeRows) ? <tr><td colspan='2'>The geometry has changed</td></tr> : <tr><td>The geometry has changed</td></tr>;
+					geometryRows = (attributeRows) ? <tr><td colSpan='2'>The geometry has changed</td></tr> : <tr><td>The geometry has changed</td></tr>;
 				}
 				rows = <table>{attributeRows}{geometryRows}</table>;
 				return <div className={'wdpaPopup'}>{rows}</div>;

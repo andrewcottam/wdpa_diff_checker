@@ -13,18 +13,23 @@ class App extends React.Component {
     super(props);
     this.state = { 
       showStatuses: ['new','deleted'], 
-      country_summary: [],
+      global_summary_visible: [],
+      country_summary: {'new':[], deleted:[],changed:[]},
       fromVersion: "", 
       toVersion: "", 
       view: 'global', 
     };
   }
   componentDidMount() {
-    this.getCountriesWithChanges();
     this.setState({ fromVersion: VERSIONS[0], toVersion: VERSIONS[1] });
+    //get the global diff summary
+    this.getGlobalSummary().then(() => {
+      //filter the countries for those that have diff data
+      this.getVisibleCountries();
+    });
   }
-  setMap(map, e){
-    this.setState({map: map});
+  setMap(map){
+    this.map = map;
   }
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   _get(url, params) {
@@ -37,28 +42,62 @@ class App extends React.Component {
       });
     });
   }
-  getCountriesWithChanges() {
-    let countryData;
-    //get the country reference data from the cached geojson data
-    let countriesJson = JSON.parse(JSON.stringify(geojson));
-    //get the countries that have changes in this version
-    this._get(REST_BASE_URL + "get_wdpa_diff_countries?format=json").then(response => {
-      let global_summary = response.records.map(country => {
-        //find the matching item from the countries.json array
-        countryData = countriesJson.features.find(feature => feature.properties.iso3 === country.iso3);
-        //merge the two objects
-        let returnObject = (countryData) ? Object.assign(country, countryData.properties, { "centroid": countryData.geometry.coordinates }) : country;
-        return returnObject;
+  //returns true if the country has protected areas with the passed status
+  showCountry(status, country){
+    return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] !== null); 
+  }
+  //rest request to get the global diff statistics
+  getGlobalSummary() {
+    return new Promise((resolve, reject) => {
+      let countryData;
+      //get the country reference data from the cached geojson data
+      let countriesJson = JSON.parse(JSON.stringify(geojson));
+      //get the countries that have changes in this version
+      this._get(REST_BASE_URL + "get_wdpa_diff_countries?format=json").then(response => {
+        let global_summary = response.records.map(country => {
+          //find the matching item from the countries.json array
+          countryData = countriesJson.features.find(feature => feature.properties.iso3 === country.iso3);
+          //merge the two objects
+          return (countryData) ? Object.assign(country, countryData.properties, { "centroid": countryData.geometry.coordinates }) : null;
+        });
+        //filter out the nulls
+        this.global_summary = global_summary.filter((item) => item !== null);
+        resolve("GlobalSummaryRetrieved");
       });
-      this.setState({global_summary: global_summary});
     });
   }
+  //filters the global summary for only the countries that need to be shown
+  getVisibleCountries(){
+    //iterate through the countries and get only the ones that will be shown
+    let global_summary_visible = this.global_summary.filter((country) => {
+      return (this.showCountry('new', country) || this.showCountry('deleted', country) || this.showCountry('changed', country));
+    });
+    //set the state - this creates the country popups on the map
+    this.setState({global_summary_visible: global_summary_visible});
+  }
+  //fired when the user clicks on a country popup
   clickCountryPopup(country) {
     //set the view type
     this.setState({view: "country"});
     //get the stats data for the country
+    let newPAs=[], deletedPAs=[], changedPAs=[];
     this._get(REST_BASE_URL + "get_wdpa_diff_country?format=json&iso3=" + country.iso3).then(response => {
-      this.setState({country_summary: response.records});
+      response.records.forEach(record => {
+        switch (record.status) {
+          case 'new':
+            newPAs = record.wdpaids;
+            break;
+          case 'deleted':
+            deletedPAs = record.wdpaids;
+            break;
+          case 'changed':
+            changedPAs = record.wdpaids;
+            break;
+          default:
+            // code
+          }
+      });
+      this.setState({country_summary: {'new': newPAs, deleted: deletedPAs, changed: changedPAs}});
     });
     //get the individual changes in the protected areas
     this._get(REST_BASE_URL + "get_wdpa_diff_pas?format=json&iso3=" + country.iso3).then(response => {
@@ -72,17 +111,17 @@ class App extends React.Component {
     return (
       <React.Fragment>
         <MyMap 
-          setMap={this.setMap.bind(this)}
-          showStatuses={this.state.showStatuses}
-          global_summary={this.state.global_summary}
-          country_summary={this.state.country_summary}
-          clickCountryPopup={this.clickCountryPopup.bind(this)}
           fromVersion={this.state.fromVersion} 
           toVersion={this.state.toVersion}
+          global_summary_visible={this.state.global_summary_visible}
+          country_summary={this.state.country_summary}
+          setMap={this.setMap.bind(this)}
+          showStatuses={this.state.showStatuses}
+          clickCountryPopup={this.clickCountryPopup.bind(this)}
           onMouseEnter={this.onMouseEnter.bind(this)}
           view={this.state.view}
         />
-        <PAPopupList mouseEnterEventData={this.state.mouseEnterEventData} protected_areas_data={this.state.protected_areas_data} map={this.state.map}/>
+        <PAPopupList mouseEnterEventData={this.state.mouseEnterEventData} protected_areas_data={this.state.protected_areas_data} map={this.map}/>
       </React.Fragment>
     );
   }
