@@ -21,20 +21,20 @@ class PAPopupList extends React.Component {
 			case LAYER_NAME_TO_CHANGED:
 				//get the previous version of the feature
 				let previous_feature = this.props.map.querySourceFeatures("wdpa_from", {sourceLayer: "wdpa_aug_2019_polygons", filter: ["==", "wdpaid", feature.properties.wdpaid]})[0];
-				let rows;
+				let rows, attributeRows, geometryRows;
 				//attribute changes
 				if (pa_data.attribute_change && pa_data.attribute_change.length>0) {
 					//attributes have changed - build a table of the differences
-					rows = pa_data.attribute_change.map((attribute) => {
+					attributeRows = pa_data.attribute_change.map((attribute) => {
 						return <tr><td>{previous_feature.properties[attribute]}</td><td>{feature.properties[attribute]}</td></tr>;
 					});
-					rows = <table>{rows}</table>;
 				}
 				//geometry changes
 				if (pa_data.geometry_change) {
 					//geometry has changed
-					console.log(pa_data.attribute_change);
+					geometryRows = (attributeRows) ? <tr><td colspan='2'>The geometry has changed</td></tr> : <tr><td>The geometry has changed</td></tr>;
 				}
+				rows = <table>{attributeRows}{geometryRows}</table>;
 				return <div className={'wdpaPopup'}>{rows}</div>;
 			default:
 				// code
