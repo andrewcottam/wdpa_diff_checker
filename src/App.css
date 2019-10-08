@@ -64,22 +64,60 @@
 #popup {
   position: absolute;
   background-color: white;
-  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 10px, rgba(0, 0, 0, 0.23) 0px 3px 10px;
-  padding: 2px;
   border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .wdpaPopup {
-  padding: 3px;
+  /*padding: 3px;*/
   font-size: 12px;
-  border-radius: 3px;
+  cursor: pointer;
+  /*border-radius: 3px;*/
 }
 
-.wdpaPopup:hover {
+.paPopupListHeader {
+  background: whitesmoke;
+  padding: 3px;
+}
+
+.wdpaPopupListItem:hover {
   background-color: aliceblue;
 }
 
 .wdpaPopup a {
   color: unset;
-  text-decoration:none;
+  text-decoration: none;
+}
+
+.paPopupChangeType {
+  padding: 5px 10px;
+}
+
+.paPopupName {
+  padding: 10px;
+  background-color: aliceblue;
+  font-weight: 500;
+}
+
+.paPopupRow {
+  padding: 3px;
+}
+
+.paPopupNameLeft {}
+
+.paPopupNameRight {
+  padding-left: 8px;
+}
+
+.paPopupHeaderRow {
+  font-style: italic;
+}
+
+.changeTable {
+  margin: 0px 10px;
+  font-size: 11px;
+}
+.geometryChangeDiv{
+  padding: 5px 10px;
 }
