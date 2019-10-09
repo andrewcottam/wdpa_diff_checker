@@ -15,6 +15,30 @@
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <script>
+      window.MAP_STYLE_DEFAULT = "mapbox://styles/blishten/ck1hsullb06lw1cmyzz7wrycl"; //mapbox light v7 style without the national parks, national park labels or landuse
+      //source names
+      window.SRC_FROM = "wdpa_from";
+      window.SRC_FROM_POINTS = "wdpa_from_points";
+      window.SRC_TO = "wdpa_to";
+      //layer names
+      window.LYR_FROM = "from";
+      window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON = "from_geometry_point_to_polygon";
+      window.LYR_FROM_GEOMETRY_SHIFTED_LINE = "from_geometry_shifted";
+      window.LYR_TO = "to";
+      window.LYR_TO_CHANGED = "to_changed";
+      window.LYR_TO_CHANGED_LINE = "to_changed_line";
+      window.LYR_TO_CHANGED_GEOMETRY = "to_changed_geometry";
+      window.LYR_TO_CHANGED_GEOMETRY_LINE = "to_changed_geometry_line";
+      window.LYR_FROM_DELETED = "from_deleted";
+      window.LYR_FROM_DELETED_LINE = "from_deleted_line";
+      window.LYR_TO_NEW = "to_new";
+      window.LYR_TO_NEW_LINE = "to_new_line";
+      window.LYR_TO_LABEL = "to_label";
+      window.LYR_FROM_GEOMETRY_SELECTED_LINE = "from_geometry_selected_line";
+      window.LYR_FROM_GEOMETRY_SELECTED_POINT = "from_geometry_selected_point";
+      window.LYR_TO_GEOMETRY_SELECTED_LINE = "to_geometry_selected_line";
+    </script>
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.

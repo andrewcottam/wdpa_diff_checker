@@ -70,10 +70,7 @@
 }
 
 .wdpaPopup {
-  /*padding: 3px;*/
   font-size: 12px;
-  cursor: pointer;
-  /*border-radius: 3px;*/
 }
 
 .paPopupListHeader {
@@ -90,13 +87,16 @@
   text-decoration: none;
 }
 
+.paPopupContent{
+  padding:10px;
+}
 .paPopupChangeType {
-  padding: 5px 10px;
 }
 
 .paPopupName {
   padding: 10px;
   background-color: aliceblue;
+  border-bottom: 1px solid lightgray;
   font-weight: 500;
 }
 
@@ -107,7 +107,10 @@
 .paPopupNameLeft {}
 
 .paPopupNameRight {
+  cursor: pointer;
   padding-left: 8px;
+  float: right;
+  font-size:10px;
 }
 
 .paPopupHeaderRow {
@@ -115,9 +118,12 @@
 }
 
 .changeTable {
-  margin: 0px 10px;
+  margin: 10px;
   font-size: 11px;
 }
-.geometryChangeDiv{
+.ReactTable .rt-th, .ReactTable .rt-td{
+  padding: 5px !important;
+}
+.geometryChangeDiv {
   padding: 5px 10px;
 }

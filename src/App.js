@@ -19,7 +19,7 @@ class App extends React.Component {
       fromVersion: "", 
       toVersion: "", 
       showStatuses: ['new','deleted'], 
-      view: 'global', 
+      view: 'global'
     };
   }
   componentDidMount() {
@@ -100,9 +100,23 @@ class App extends React.Component {
   }
   onMouseEnter(e){
     if (this.state.view === 'country') this.setState({mouseEnterEventData:e});
+    //highlight the feature
+    if (e.features.length === 1) this.highlightFeature(e.features[0]);
   }
   showPAPopup(feature, e){
     this.onMouseEnter({features:[feature], point:{x: e.screenX, y: e.screenY}});
+  }
+  highlightFeature(feature){
+		switch (feature.layer.id) {
+			case window.LYR_TO_CHANGED_GEOMETRY:
+	      //the following lines are necessary because if you update the state it refreshes all of the map layers so we access the Mapbox API directly
+        this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
+        this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_POINT, ['==','wdpaid', feature.properties.wdpaid]);
+        this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
+				break;
+			default:
+				//code
+		}
   }
   render() {
     let children = (this.state.mouseEnterEventData !== undefined) ? 
