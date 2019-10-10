@@ -120,61 +120,42 @@ class App extends React.Component {
   showPAPopup(feature, e){
     this.onMouseEnter({features:[feature], point:{x: e.screenX, y: e.screenY}});
   }
-  filterSelectionLayers(feature){
-    switch (feature.layer.id) {
-      case window.LYR_FROM_DELETED_POLYGON:
-      case window.LYR_TO_CHANGED_GEOMETRY:
-        this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
+  highlightFeature(feature){
+    //reset the selected layers
+    this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_LINE, ['==','wdpaid', '-1']);              
+    this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_POINT, ['==','wdpaid', '-1']);              
+    this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_LINE, ['==','wdpaid', '-1']);              
+    this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_POINT, ['==','wdpaid', '-1']);              
+    let hightlightRules = [
+      {sourceLayer: window.LYR_FROM_DELETED_POLYGON, highlightLayers: [{layer: window.LYR_FROM_GEOMETRY_SELECTED_LINE, paintPropertyFrom: window.LYR_FROM_DELETED_POLYGON}]},
+      {sourceLayer: window.LYR_FROM_DELETED_POINT, highlightLayers: [{ layer: window.LYR_FROM_GEOMETRY_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_DELETED_POINT}]},
+      {sourceLayer: window.LYR_TO_CHANGED_GEOMETRY, highlightLayers: [{layer: window.LYR_TO_GEOMETRY_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_CHANGED_GEOMETRY_LINE},{layer: window.LYR_FROM_GEOMETRY_SELECTED_LINE, paintPropertyFrom: window.LYR_FROM_GEOMETRY_SHIFTED_LINE},{layer: window.LYR_FROM_GEOMETRY_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON}]},
+      {sourceLayer: window.LYR_TO_CHANGED_ATTRIBUTE, highlightLayers: [{layer: window.LYR_TO_GEOMETRY_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_CHANGED_ATTRIBUTE}]},
+      {sourceLayer: window.LYR_TO_NEW_POLYGON, highlightLayers: [{ layer: window.LYR_TO_GEOMETRY_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_NEW_POLYGON}]},
+      {sourceLayer: window.LYR_TO_NEW_POINT, highlightLayers: [{ layer: window.LYR_TO_GEOMETRY_SELECTED_POINT, paintPropertyFrom: window.LYR_TO_NEW_POINT}]},
+      {sourceLayer: window.LYR_TO_POLYGON, highlightLayers: [{ layer: window.LYR_TO_GEOMETRY_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_POLYGON},{ layer: window.LYR_FROM_GEOMETRY_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON}]},
+      {sourceLayer: window.LYR_TO_POINT, highlightLayers: [{ layer: window.LYR_TO_GEOMETRY_SELECTED_POINT, paintPropertyFrom: window.LYR_TO_POINT}]}
+    ];
+    //get the rule for the layer  
+    let rule = hightlightRules.find(_rule => _rule.sourceLayer === feature.layer.id);
+    //set the filter on the highlightLayers
+    rule.highlightLayers.forEach((item) => {
+      this.map.setFilter(item.layer, ['==','wdpaid', feature.properties.wdpaid]);              
+    });
+    //set the paint property
+    switch (feature.layer.type) {
+      case 'fill':
+        // code
         break;
-      case window.LYR_FROM_DELETED_POINT:
-      case window.LYR_TO_POLYGON:
-        this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_POINT, ['==','wdpaid', feature.properties.wdpaid]);
+      case 'line':
+        // code
         break;
-      case window.LYR_TO_NEW_POLYGON:
-      case window.LYR_TO_POLYGON:
-      case window.LYR_TO_CHANGED_GEOMETRY:
-      case window.LYR_TO_NEW_POLYGON:
-        this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
-        break;
-      case window.LYR_TO_NEW_POINT:
-        this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_POINT, ['==','wdpaid', feature.properties.wdpaid]);
+      case 'circle':
+        // code
         break;
       default:
         // code
     }
-  }
-  setSelectionColors(feature){
-    // let existingPaintProperty = {};
-    // switch (feature.layer.id) {
-    //   case window.LYR_FROM_DELETED_POLYGON:
-    //   case window.LYR_TO_NEW_POLYGON:
-    //   case window.LYR_FROM_DELETED_POLYGON:
-    //   case window.LYR_TO_CHANGED_ATTRIBUTE:
-    //     this.map.getPaintProperty(feature.layer.id, "fill-outline-color")
-    //     break;
-    //   default:
-    //     // code
-    // }
-  }
-  highlightFeature(feature){
-    //filter the selection layers
-    this.filterSelectionLayers(feature);
-    // this.setSelectionColors(feature);
-    
-  //   //get the color of the existing layers outline
-		// let existingPaintProperty = (feature.layer.paint.hasOwnProperty("fill-outline-color")) ? this.map.getPaintProperty(feature.layer.id, "fill-outline-color") : {};
-		// //see if we need to highlight a feature in the from layer or the to layer
-		// switch (feature.layer.id.indexOf("from")) {
-		// 	case -1: //to layer
-		// 	  //if the feature has changed geometry then we have to get the outline from the LYR_TO_CHANGED_GEOMETRY layer
-	 //     //the following lines are necessary because if you update the state it refreshes all of the map layers so we access the Mapbox API directly
-  //       this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
-  // 		  this.map.setPaintProperty(window.LYR_TO_GEOMETRY_SELECTED_LINE, "line-color", existingPaintProperty);
-		// 		break;
-		// 	default: //from layer
-		// 		this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
-  // 		  this.map.setPaintProperty(window.LYR_FROM_GEOMETRY_SELECTED_LINE, "line-color", existingPaintProperty);
-		// }
 	  // console.log(feature.layer.id + " has the property " + existingPaintProperty + ". Setting that on layer: " + window.LYR_TO_GEOMETRY_SELECTED_LINE);
   }
   render() {

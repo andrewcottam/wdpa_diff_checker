@@ -29,6 +29,9 @@ const P_TO_POINT = {"circle-radius": 5, "circle-color": "rgb(99,148,69)", "circl
 const P_TO_GEOMETRY_SELECTED_LINE = { "line-color": "rgb(0,0,0)", "line-width": 1, "line-opacity": 0};
 const P_TO_GEOMETRY_SELECTED_POINT = {"circle-radius": 5, "circle-color": "rgb(0,0,0)", "circle-opacity": 0};
 
+const redline={ "line-color": "rgb(255,0,0)", "line-width": 2, "line-opacity": 1};
+const redpoint = {"circle-radius": 5, "circle-color": "rgb(255,0,0)", "circle-opacity": 1};
+
 class MyMap extends React.Component {
   constructor(props){
     super(props);
@@ -110,7 +113,7 @@ class MyMap extends React.Component {
         <Source id={window.SRC_FROM} tileJsonSource={{type: "vector", attribution: "wdpa", tiles: [ TILES_PREFIX + "wdpa_" + this.props.fromVersion + "_polygons" + TILES_SUFFIX]}}/>
         <Source id={window.SRC_FROM_POINTS} tileJsonSource={{type: "vector", attribution: "wdpa", tiles: [ TILES_PREFIX + "wdpa_" + this.props.fromVersion + "_points" + TILES_SUFFIX]}}/>
         <Source id={window.SRC_TO} tileJsonSource={{type: "vector", attribution: "wdpa", tiles: [ TILES_PREFIX + "wdpa_" + this.props.toVersion + "_polygons" + TILES_SUFFIX]}}/>
-        <Source id={window.SRC_TO_POINTS} tileJsonSource={{type: "vector", attribution: "wdpa", tiles: [ TILES_PREFIX + "wdpa_" + this.props.toVersion + "_points" + TILES_SUFFIX]}}/>
+        <Source id={window.SRC_TO_POINTS} tileJsonSource={{type: "vector", attribution: "wdpa", tiles: [ TILES_PREFIX + "wdpa_" + this.props.toVersion + "_points" + TILES_SUFFIX]}}/> 
         <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM} type="fill" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "none"}} paint={P_TO}/>
         <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_SHIFTED_LINE} type="line" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryShiftedPAs)} paint={P_FROM_GEOMETRY_SHIFTED_LINE}/>
         <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE} type="line" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryPointCountChangedPAs)} paint={P_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE}/>
@@ -124,10 +127,10 @@ class MyMap extends React.Component {
         <Layer sourceId={window.SRC_TO} id={window.LYR_TO_NEW_POLYGON} type="fill" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_NEW} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
         <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_NEW_POINT} type="circle" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={P_TO_NEW_POINT} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
         <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_POINT} type="circle" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={P_TO_POINT} filter={toPointsFilter} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} filter={['==','wdpaid','-1']} paint={P_FROM_GEOMETRY_SELECTED_LINE}/>
-        <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_GEOMETRY_SELECTED_POINT} type="circle" sourceLayer={"wdpa_" + this.props.fromVersion + "_points"} layout={{visibility: "visible"}} filter={['==', 'wdpaid','-1']} paint={P_FROM_GEOMETRY_SELECTED_POINT}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_GEOMETRY_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_GEOMETRY_SELECTED_LINE} filter={['==', 'wdpaid','-1']}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_GEOMETRY_SELECTED_POINT} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={P_TO_GEOMETRY_SELECTED_POINT} filter={['==', 'wdpaid','-1']}/>
+        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} filter={['==','wdpaid','-1']} paint={redline}/>
+        <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_GEOMETRY_SELECTED_POINT} type="circle" sourceLayer={"wdpa_" + this.props.fromVersion + "_points"} layout={{visibility: "visible"}} filter={['==', 'wdpaid','-1']} paint={redpoint}/>
+        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_GEOMETRY_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={redline} filter={['==', 'wdpaid','-1']}/>
+        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_GEOMETRY_SELECTED_POINT} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={redline} filter={['==', 'wdpaid','-1']}/>
         {countryPopups}
       </Map>
     );
