@@ -120,17 +120,62 @@ class App extends React.Component {
   showPAPopup(feature, e){
     this.onMouseEnter({features:[feature], point:{x: e.screenX, y: e.screenY}});
   }
-  highlightFeature(feature){
-		switch (feature.layer.id) {
-			case window.LYR_TO_CHANGED_GEOMETRY:
-	      //the following lines are necessary because if you update the state it refreshes all of the map layers so we access the Mapbox API directly
+  filterSelectionLayers(feature){
+    switch (feature.layer.id) {
+      case window.LYR_FROM_DELETED_POLYGON:
+      case window.LYR_TO_CHANGED_GEOMETRY:
         this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
+        break;
+      case window.LYR_FROM_DELETED_POINT:
+      case window.LYR_TO_POLYGON:
         this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_POINT, ['==','wdpaid', feature.properties.wdpaid]);
+        break;
+      case window.LYR_TO_NEW_POLYGON:
+      case window.LYR_TO_POLYGON:
+      case window.LYR_TO_CHANGED_GEOMETRY:
+      case window.LYR_TO_NEW_POLYGON:
         this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
-				break;
-			default:
-				//code
-		}
+        break;
+      case window.LYR_TO_NEW_POINT:
+        this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_POINT, ['==','wdpaid', feature.properties.wdpaid]);
+        break;
+      default:
+        // code
+    }
+  }
+  setSelectionColors(feature){
+    // let existingPaintProperty = {};
+    // switch (feature.layer.id) {
+    //   case window.LYR_FROM_DELETED_POLYGON:
+    //   case window.LYR_TO_NEW_POLYGON:
+    //   case window.LYR_FROM_DELETED_POLYGON:
+    //   case window.LYR_TO_CHANGED_ATTRIBUTE:
+    //     this.map.getPaintProperty(feature.layer.id, "fill-outline-color")
+    //     break;
+    //   default:
+    //     // code
+    // }
+  }
+  highlightFeature(feature){
+    //filter the selection layers
+    this.filterSelectionLayers(feature);
+    // this.setSelectionColors(feature);
+    
+  //   //get the color of the existing layers outline
+		// let existingPaintProperty = (feature.layer.paint.hasOwnProperty("fill-outline-color")) ? this.map.getPaintProperty(feature.layer.id, "fill-outline-color") : {};
+		// //see if we need to highlight a feature in the from layer or the to layer
+		// switch (feature.layer.id.indexOf("from")) {
+		// 	case -1: //to layer
+		// 	  //if the feature has changed geometry then we have to get the outline from the LYR_TO_CHANGED_GEOMETRY layer
+	 //     //the following lines are necessary because if you update the state it refreshes all of the map layers so we access the Mapbox API directly
+  //       this.map.setFilter(window.LYR_TO_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
+  // 		  this.map.setPaintProperty(window.LYR_TO_GEOMETRY_SELECTED_LINE, "line-color", existingPaintProperty);
+		// 		break;
+		// 	default: //from layer
+		// 		this.map.setFilter(window.LYR_FROM_GEOMETRY_SELECTED_LINE, ['==','wdpaid', feature.properties.wdpaid]);
+  // 		  this.map.setPaintProperty(window.LYR_FROM_GEOMETRY_SELECTED_LINE, "line-color", existingPaintProperty);
+		// }
+	  // console.log(feature.layer.id + " has the property " + existingPaintProperty + ". Setting that on layer: " + window.LYR_TO_GEOMETRY_SELECTED_LINE);
   }
   render() {
     let children = (this.state.mouseEnterEventData !== undefined) ? 

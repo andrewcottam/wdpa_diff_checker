@@ -15,21 +15,19 @@ const TILES_SUFFIX = "&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Ve
 const P_FROM_GEOMETRY_SHIFTED_LINE = { "line-color": "rgb(99,148,69)", "line-width": 1, "line-opacity": 0.6, "line-dasharray": [3,3]};
 const P_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE = { "line-color": "rgb(99,148,69)", "line-width": 1, "line-opacity": 0.6, "line-dasharray": [3,3]};
 const P_FROM_GEOMETRY_POINT_TO_POLYGON = {"circle-radius": 5, "circle-color": "rgba(99,148,69,0.6)"};
-const P_FROM_GEOMETRY_SELECTED_POINT = {"circle-radius": 5, "circle-color": "rgb(99,148,69)"};
-const P_FROM_GEOMETRY_SELECTED_LINE = { "line-color": "rgb(99,148,69)", "line-width": 1, "line-opacity": 1};
-const P_FROM_DELETED = { "fill-color": "rgba(255,0,0, 0.2)", "fill-outline-color": "rgba(255,0,0,0)"};
-const P_FROM_DELETED_LINE = { "line-color": "rgb(255,0,0)", "line-width": 2, "line-opacity": 0.5 };
-const P_FROM_DELETED_POINT = {"circle-radius": 5, "circle-color": "rgba(255,0,0,0.6)"};
-const P_TO_CHANGED_ATTRIBUTE = { "fill-color": "rgba(99,148,69,0.7)", "fill-outline-color": "rgba(99,148,69,0)" , "fill-opacity": 0.3 };
-const P_TO_CHANGED_ATTRIBUTE_LINE = { "line-color": "rgb(99,148,69)", "line-width": 1, "line-opacity": 0.6};
-const P_TO_CHANGED_GEOMETRY = { "fill-color": "rgba(99,148,69,0.4)", "fill-outline-color": "rgba(99,148,69,0)" , "fill-opacity": 0.3 };
+const P_FROM_GEOMETRY_SELECTED_POINT = {"circle-radius": 5, "circle-color": "rgb(0,0,0)", "circle-opacity": 0};
+const P_FROM_GEOMETRY_SELECTED_LINE = { "line-color": "rgb(0,0,0)", "line-width": 1, "line-opacity": 0};
+const P_FROM_DELETED_POLYGON = { "fill-color": "rgba(255,0,0, 0.2)", "fill-outline-color": "rgba(255,0,0,0.5)"};
+const P_FROM_DELETED_POINT = {"circle-radius": 5, "circle-color": "rgb(255,0,0)", "circle-opacity": 0.6};
+const P_TO_CHANGED_ATTRIBUTE = { "fill-color": "rgba(99,148,69,0.4)", "fill-outline-color": "rgba(99,148,69,0.8)"};
+const P_TO_CHANGED_GEOMETRY = { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(0,0,0,0)"};
 const P_TO_CHANGED_GEOMETRY_LINE = { "line-color": "rgb(99,148,69)", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [3,3]};
-const P_TO_NEW = { "fill-color": "rgba(63,127,191,0.3)", "fill-outline-color": "rgba(63,127,191,0)"};
-const P_TO_NEW_LINE = { "line-color": "rgb(63,127,191)", "line-width": 1, "line-opacity": 0.6 };
-const P_TO_NEW_POINT = {"circle-radius": 10, "circle-color": "rgba(63,127,191,0.6)"};
-const P_TO = { "fill-color": "rgba(99,148,69,0.4)", "fill-outline-color": "rgb(99,148,69)" , "fill-opacity": 0.3 };
-const P_TO_POINTS = {"circle-radius": 5, "circle-color": "rgba(99,148,69,0.6)"};
-const P_TO_GEOMETRY_SELECTED_LINE = { "line-color": "rgb(99,148,69)", "line-width": 2, "line-opacity": 1};
+const P_TO_NEW = { "fill-color": "rgba(63,127,191,0.2)", "fill-outline-color": "rgba(63,127,191,0.6)"};
+const P_TO_NEW_POINT = {"circle-radius": 10, "circle-color": "rgb(63,127,191)", "circle-opacity": 0.6};
+const P_TO = { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(99,148,69,0.3)"};
+const P_TO_POINT = {"circle-radius": 5, "circle-color": "rgb(99,148,69)", "circle-opacity": 0};
+const P_TO_GEOMETRY_SELECTED_LINE = { "line-color": "rgb(0,0,0)", "line-width": 1, "line-opacity": 0};
+const P_TO_GEOMETRY_SELECTED_POINT = {"circle-radius": 5, "circle-color": "rgb(0,0,0)", "circle-opacity": 0};
 
 class MyMap extends React.Component {
   constructor(props){
@@ -118,20 +116,18 @@ class MyMap extends React.Component {
         <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE} type="line" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryPointCountChangedPAs)} paint={P_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE}/>
         <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON} type="circle" sourceLayer={"wdpa_" + this.props.fromVersion + "_points"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryPointToPolygonPAs)} paint={P_FROM_GEOMETRY_POINT_TO_POLYGON}/>
         <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_DELETED_POINT} type="circle" sourceLayer={"wdpa_" + this.props.fromVersion + "_points"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(deletedPAs)} paint={P_FROM_DELETED_POINT} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO} type="fill" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO} filter={toFilter} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
+        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_POLYGON} type="fill" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO} filter={toFilter} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
         <Layer sourceId={window.SRC_TO} id={window.LYR_TO_CHANGED_ATTRIBUTE} type="fill" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_ATTRIBUTE} filter={['in', 'wdpaid'].concat(changedPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_CHANGED_ATTRIBUTE_LINE} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_ATTRIBUTE_LINE} filter={['in', 'wdpaid'].concat(changedPAs)}/>
         <Layer sourceId={window.SRC_TO} id={window.LYR_TO_CHANGED_GEOMETRY} type="fill" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY} filter={['in', 'wdpaid'].concat(geometryChangedPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
         <Layer sourceId={window.SRC_TO} id={window.LYR_TO_CHANGED_GEOMETRY_LINE} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY_LINE} filter={['in', 'wdpaid'].concat(geometryChangedPAs)}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_DELETED_POLYGON} type="fill" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_FROM_DELETED} filter={['in', 'wdpaid'].concat(deletedPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_DELETED_POLYGON_LINE} type="line" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_FROM_DELETED_LINE} filter={['in', 'wdpaid'].concat(deletedPAs)}/>
+        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_DELETED_POLYGON} type="fill" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_FROM_DELETED_POLYGON} filter={['in', 'wdpaid'].concat(deletedPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
         <Layer sourceId={window.SRC_TO} id={window.LYR_TO_NEW_POLYGON} type="fill" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_NEW} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_NEW_LINE} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_NEW_LINE} filter={['in', 'wdpaid'].concat(newPAs)}/>
         <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_NEW_POINT} type="circle" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={P_TO_NEW_POINT} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
-        <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_POINTS} type="circle" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={P_TO_POINTS} filter={toPointsFilter} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
+        <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_POINT} type="circle" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={P_TO_POINT} filter={toPointsFilter} onMouseEnter={this.props.onMouseEnter.bind(this)}/>
         <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + this.props.fromVersion + "_polygons"} layout={{visibility: "visible"}} filter={['==','wdpaid','-1']} paint={P_FROM_GEOMETRY_SELECTED_LINE}/>
         <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_GEOMETRY_SELECTED_POINT} type="circle" sourceLayer={"wdpa_" + this.props.fromVersion + "_points"} layout={{visibility: "visible"}} filter={['==', 'wdpaid','-1']} paint={P_FROM_GEOMETRY_SELECTED_POINT}/>
         <Layer sourceId={window.SRC_TO} id={window.LYR_TO_GEOMETRY_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_GEOMETRY_SELECTED_LINE} filter={['==', 'wdpaid','-1']}/>
+        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_GEOMETRY_SELECTED_POINT} type="line" sourceLayer={"wdpa_" + this.props.toVersion + "_points"} layout={{visibility: "visible"}} paint={P_TO_GEOMETRY_SELECTED_POINT} filter={['==', 'wdpaid','-1']}/>
         {countryPopups}
       </Map>
     );

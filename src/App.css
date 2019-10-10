@@ -35,8 +35,7 @@
 
 .countryPopup .name {
   padding: 1px 5px;
-  background: midnightblue;
-  color: white;
+  background: aliceblue;
   min-width: 40px;
 }
 
@@ -44,21 +43,20 @@
   padding: 0px 4px;
 }
 
-.countryPopup .stat {
+.stat {
   padding-left: 1px;
   padding-right: 4px;
 }
 
-.countryPopup .new {
-  color: green;
+.new {
+  color: rgb(63,127,191);
 }
 
-.countryPopup .deleted {
+.deleted {
   color: red;
 }
 
-.countryPopup .changed {
-  color: blue;
+.changed {
 }
 
 #popup {

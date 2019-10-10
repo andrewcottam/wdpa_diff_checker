@@ -1,5 +1,6 @@
 import React from 'react';
 import Changed from './Changed.js';
+import Status from './Status.js';
 
 const TITLE_LINK = "Click to open the protected area in the Protected Planet website";
 const URL_PP = "https://www.protectedplanet.net/";
@@ -36,24 +37,28 @@ class PAPopup extends React.Component {
 		let left = this.props.mouseEnterEventData.point.x + 25 + 'px';
 		let top = this.props.mouseEnterEventData.point.y - 25 + 'px';
 		let feature = this.props.mouseEnterEventData.features[0];
-		let children;
+		let children, status="";
 		switch (feature.layer.id) {
 			case window.LYR_TO_CHANGED_ATTRIBUTE:
 			case window.LYR_TO_CHANGED_GEOMETRY:
 				let changedData = this.getChangedData(feature);
 				children = <Changed changedData={changedData} fromVersion={this.props.fromVersion} toVersion={this.props.toVersion}/>;
+				status = "changed";
 				break;
 			case window.LYR_TO_NEW_POLYGON:
 			case window.LYR_TO_NEW_POINT:
 				children = <div className={'paPopupChangeType'}>This protected area was added in {this.props.toVersion}</div>;
+				status = "new";
 				break;
 			case window.LYR_FROM_DELETED_POLYGON:
 			case window.LYR_FROM_DELETED_POINT:
 				children = <div className={'paPopupChangeType'}>This protected area was removed in {this.props.toVersion}</div>;
+				status = "deleted";
 				break;
-			case window.LYR_TO:
-			case window.LYR_TO_POINTS:
+			case window.LYR_TO_POLYGON:
+			case window.LYR_TO_POINT:
 				children = <div className={'paPopupChangeType'}>No change</div>;
+				status = "no change";
 				break;
 			default:
 				//code
@@ -61,7 +66,7 @@ class PAPopup extends React.Component {
 		return (
 			<div style={{'left': left,'top':top}} id="popup">
 				<div className={'wdpaPopup'}>
-					<div className="paPopupName"><span className={"paPopupNameLeft"}>{feature.properties.name}</span><span className={"paPopupNameRight"}><a href={URL_PP + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpaid}</a></span></div>
+					<div className="paPopupName"><Status status={status}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span><span className={"paPopupNameRight"}><a href={URL_PP + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpaid}</a></span></div>
 					<div className={'paPopupContent'}>
 						{children}
 					</div>
