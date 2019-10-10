@@ -99,6 +99,20 @@ class App extends React.Component {
     });
   }
   onMouseEnter(e){
+    let wdpaids =[];
+		//remove duplicate features
+		let features = e.features.map(feature=>{
+			if (wdpaids.indexOf(feature.properties.wdpaid) === -1){
+				wdpaids.push(feature.properties.wdpaid);
+				return feature;
+			}else{
+				return null;
+			}
+		});
+		//remove the nulls
+		features = features.filter((item) => item !== null);
+		//set the features property back on the mouseEventData
+    Object.assign(e, {features: features});
     if (this.state.view === 'country') this.setState({mouseEnterEventData:e});
     //highlight the feature
     if (e.features.length === 1) this.highlightFeature(e.features[0]);

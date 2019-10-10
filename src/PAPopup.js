@@ -4,10 +4,12 @@ import Changed from './Changed.js';
 const TITLE_LINK = "Click to open the protected area in the Protected Planet website";
 const URL_PP = "https://www.protectedplanet.net/";
 
-class PAPopupList extends React.Component {
+class PAPopup extends React.Component {
 	getChangedData(feature){ //single feature under mouse
 		let attributesData =[];
 		let props = feature.properties;
+		//check that the diff data has loaded
+		if (this.props.country_pa_diffs.length === 0) return;
 		//get the data for the feature under the mouse
 		let pa_data = this.props.country_pa_diffs.find(pa => pa.wdpaid === Number(props.wdpaid)); //wdpaid is BigDecimal in Geoserver by default and this gets parsed to a string type
 		//get the previous version of the feature either from the points layer of the polygons layer
@@ -36,18 +38,21 @@ class PAPopupList extends React.Component {
 		let feature = this.props.mouseEnterEventData.features[0];
 		let children;
 		switch (feature.layer.id) {
-			case window.LYR_TO_CHANGED:
+			case window.LYR_TO_CHANGED_ATTRIBUTE:
 			case window.LYR_TO_CHANGED_GEOMETRY:
 				let changedData = this.getChangedData(feature);
 				children = <Changed changedData={changedData} fromVersion={this.props.fromVersion} toVersion={this.props.toVersion}/>;
 				break;
-			case window.LYR_TO_NEW:
+			case window.LYR_TO_NEW_POLYGON:
+			case window.LYR_TO_NEW_POINT:
 				children = <div className={'paPopupChangeType'}>This protected area was added in {this.props.toVersion}</div>;
 				break;
-			case window.LYR_FROM_DELETED:
+			case window.LYR_FROM_DELETED_POLYGON:
+			case window.LYR_FROM_DELETED_POINT:
 				children = <div className={'paPopupChangeType'}>This protected area was removed in {this.props.toVersion}</div>;
 				break;
 			case window.LYR_TO:
+			case window.LYR_TO_POINTS:
 				children = <div className={'paPopupChangeType'}>No change</div>;
 				break;
 			default:
@@ -66,4 +71,4 @@ class PAPopupList extends React.Component {
 	}
 }
 
-export default PAPopupList;
+export default PAPopup;
