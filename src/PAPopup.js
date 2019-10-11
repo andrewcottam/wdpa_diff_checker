@@ -33,10 +33,10 @@ class PAPopup extends React.Component {
 		return {attributesData: attributesData, geometryData: pa_data.geometry_change};
 	}
 	render() {
-		if (this.props.mouseEnterEventData === undefined) return null;
-		let left = this.props.mouseEnterEventData.point.x + 25 + 'px';
-		let top = this.props.mouseEnterEventData.point.y - 25 + 'px';
-		let feature = this.props.mouseEnterEventData.features[0];
+		if (this.props.dataForPopup === undefined) return null;
+		let left = this.props.dataForPopup.point.x + 35 + 'px';
+		let top = this.props.dataForPopup.point.y - 25 + 'px';
+		let feature = this.props.dataForPopup.features[0];
 		let children, status="";
 		switch (feature.layer.id) {
 			case window.LYR_TO_CHANGED_ATTRIBUTE:
@@ -64,7 +64,7 @@ class PAPopup extends React.Component {
 				//code
 		}
 		return (
-			<div style={{'left': left,'top':top}} id="popup">
+			<div style={{'left': left,'top':top}} id="popup" onMouseEnter={this.props.onMouseEnterPAPopup} onMouseLeave={this.props.onMouseLeavePAPopup}>
 				<div className={'wdpaPopup'}>
 					<div className="paPopupName"><Status status={status}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span><span className={"paPopupNameRight"}><a href={URL_PP + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpaid}</a></span></div>
 					<div className={'paPopupContent'}>
