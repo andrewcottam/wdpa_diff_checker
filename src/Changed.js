@@ -21,7 +21,7 @@ class Changed extends React.Component {
 	                    showPagination={false} 
 	                    minRows={0}
 	                    data={this.props.changedData.attributesData}
-	                    columns={[{ Header: 'Attribute', accessor: 'attribute',headerStyle: { 'textAlign': 'left' }}, { Header: this.props.fromVersion, accessor: 'previous',headerStyle: { 'textAlign': 'left' }, Cell: this.renderFrom.bind(this)}, { Header: this.props.toVersion, accessor: 'current',headerStyle: { 'textAlign': 'left' }, Cell: this.renderTo.bind(this)}]}
+	                    columns={[{ Header: 'Attribute', accessor: 'attribute',headerStyle: { 'textAlign': 'left' }}, { Header: this.props.fromVersion.title, accessor: 'previous',headerStyle: { 'textAlign': 'left' }, Cell: this.renderFrom.bind(this)}, { Header: this.props.toVersion.title, accessor: 'current',headerStyle: { 'textAlign': 'left' }, Cell: this.renderTo.bind(this)}]}
 	        		/> 
 	        	</React.Fragment> : null}
 	        	{(this.props.changedData.geometryData) ?

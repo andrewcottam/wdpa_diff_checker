@@ -42,17 +42,17 @@ class PAPopup extends React.Component {
 			case window.LYR_TO_CHANGED_ATTRIBUTE:
 			case window.LYR_TO_CHANGED_GEOMETRY:
 				let changedData = this.getChangedData(feature);
-				children = <Changed changedData={changedData} fromVersion={this.props.fromVersion} toVersion={this.props.toVersion}/>;
+				children = <Changed changedData={changedData} fromVersion={this.props.fromVersion.abbreviated} toVersion={this.props.toVersion.abbreviated}/>;
 				status = "changed";
 				break;
 			case window.LYR_TO_NEW_POLYGON:
 			case window.LYR_TO_NEW_POINT:
-				children = <div className={'paPopupChangeType'}>This protected area was added in {this.props.toVersion}</div>;
+				children = <div className={'paPopupChangeType'}>This protected area was added in {this.props.toVersion.title}</div>;
 				status = "new";
 				break;
 			case window.LYR_FROM_DELETED_POLYGON:
 			case window.LYR_FROM_DELETED_POINT:
-				children = <div className={'paPopupChangeType'}>This protected area was removed in {this.props.toVersion}</div>;
+				children = <div className={'paPopupChangeType'}>This protected area was removed in {this.props.toVersion.title}</div>;
 				status = "deleted";
 				break;
 			case window.LYR_TO_POLYGON:

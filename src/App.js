@@ -6,11 +6,12 @@ import MyMap from './MyMap.js';
 import PAPopup from './PAPopup.js';
 import PAPopupList from './PAPopupList.js';
 import parse from 'color-parse';
+import AppBar from './AppBar.js';
 
 const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
 // const REST_BASE_URL = "https://rest-services.jrc.ec.europa.eu/services/marxan_vt/services/";
-const VERSIONS = ["aug_2019", "sep_2019"];
 const USE_SELECTION_COLOR = false; //set to true to disable the selection using the color of the polygon - it will use the P_SELECTION_ colors in MyMap.js
+let versions = [{title: "August 2019"},{title: "September 2019"}];
 
 class App extends React.Component {
   constructor(props) {
@@ -19,8 +20,6 @@ class App extends React.Component {
       global_summary: [],
       country_summary: [],
       country_pa_diffs: [],
-      fromVersion: "", 
-      toVersion: "", 
       showStatuses: ['new','deleted'], 
       view: 'global'
     };
@@ -28,12 +27,20 @@ class App extends React.Component {
     this.mouseOverPAPopuplist = false;
   }
   componentDidMount() {
-    this.setState({ fromVersion: VERSIONS[0], toVersion: VERSIONS[1] });
+    //get the abbreviated version data
+    versions = versions.map(version => {
+      return Object.assign(version, {abbreviated: version.title.toLowerCase().substr(0,3) + "_" + version.title.slice(-4)});
+    });
+    //set the version
+    this.setState({fromVersion: versions[0], toVersion: versions[1]});
     //get the global diff summary
     this.getGlobalSummary().then(() => {
       //filter the countries for those that have diff data
       this.getVisibleCountries();
     });
+  }
+  getAbbreviatedVersion(fullVersion){
+    return fullVersion.toLowerCase().substr(0,3) + "_" + fullVersion.slice(-4);
   }
   setMap(map){
     this.map = map;
@@ -90,6 +97,8 @@ class App extends React.Component {
   }
   //fired when the user clicks on a country popup
   clickCountryPopup(country) {
+    //set the bounds of the map
+    this.map.fitBounds([[country.west, country.south],[country.east,country.north]],{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
     //hide the country popups
     this.hideCountryPopups();
     //set the view type
@@ -144,7 +153,7 @@ class App extends React.Component {
     //set the data for the popuplist
     this.setState({dataForPopupList:e});
   }
-  showPAPopupFromList(feature, e){
+  showPAPopupFromList(feature,  e){
     this.showPAPopup({features:[feature], point:{x: e.screenX, y: e.screenY}});
   }
   closePAPopup(ms){
@@ -233,6 +242,24 @@ class App extends React.Component {
       return layer.paint;
   }
 
+  showAllNoChanges(_show){
+    let statuses = (_show) ? ['new','deleted','changed'] : [];
+    this.showChanges(statuses);
+  }
+  showChangesWithStatus(status, _show){
+    let statuses = this.state.showStatuses;
+    if (_show){
+      statuses.push(status);  
+    }else{
+      statuses.pop(status);
+    }
+    this.showChanges(statuses);
+  }
+  showChanges(statuses){
+    this.setState({showStatuses: statuses},() =>{
+      this.getVisibleCountries();  
+    });
+  }
   render() {
     //clear any timers to close the PAPopup
     clearTimeout(this.PAPopuptimer);
@@ -252,9 +279,11 @@ class App extends React.Component {
           onMouseEnter={this.onMouseEnter.bind(this)}
           onMouseLeave={this.onMouseLeave.bind(this)}
           view={this.state.view}
+          attribution={"IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) August, 2019, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>"}
         />
         <PAPopupList dataForPopupList={this.state.dataForPopupList} country_pa_diffs={this.state.country_pa_diffs} map={this.map} showPAPopup={this.showPAPopupFromList.bind(this)} onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}/> 
         <PAPopup dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
+        <AppBar fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} showAllNoChanges={this.showAllNoChanges.bind(this)} showChangesNew={this.showChangesWithStatus.bind(this, "new")} showChangesDeleted={this.showChangesWithStatus.bind(this, "deleted")} showChangesChanged={this.showChangesWithStatus.bind(this, "changed")}/>
       </React.Fragment>
     );
   }
