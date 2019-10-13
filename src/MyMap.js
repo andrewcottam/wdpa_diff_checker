@@ -63,26 +63,28 @@ class MyMap extends React.Component {
         toPointsFilter = ['in', 'iso3',''];
         break;
       case 'country':
+        //get the layers to show
+        let visibleLayers = this.props.statuses.map(status => {return (status.visible) ? status.key : null});
         //get the stats data for the country
         this.props.country_summary.forEach(record => {
           switch (record.status) {
             case 'new':
-              if (this.props.showStatuses.indexOf("new") !== -1) newPAs = record.wdpaids;
+              if (visibleLayers.indexOf("new") !== -1) newPAs = record.wdpaids;
               break;
             case 'deleted':
-              if (this.props.showStatuses.indexOf("deleted") !== -1) deletedPAs = record.wdpaids;
+              if (visibleLayers.indexOf("deleted") !== -1) deletedPAs = record.wdpaids;
               break;
             case 'changed':
-              if (this.props.showStatuses.indexOf("changed") !== -1) changedPAs = record.wdpaids;
+              if (visibleLayers.indexOf("changed") !== -1) changedPAs = record.wdpaids;
               break;
             case 'geometry shifted':
-              if (this.props.showStatuses.indexOf("changed") !== -1) geometryShiftedPAs = record.wdpaids;
+              if (visibleLayers.indexOf("changed") !== -1) geometryShiftedPAs = record.wdpaids;
               break;
             case 'point count':
-              if (this.props.showStatuses.indexOf("changed") !== -1) geometryPointCountChangedPAs = record.wdpaids;
+              if (visibleLayers.indexOf("changed") !== -1) geometryPointCountChangedPAs = record.wdpaids;
               break;
             case 'point to polygon':
-              if (this.props.showStatuses.indexOf("changed") !== -1) geometryPointToPolygonPAs = record.wdpaids;
+              if (visibleLayers.indexOf("changed") !== -1) geometryPointToPolygonPAs = record.wdpaids;
               break;
             default:
               // code
@@ -94,7 +96,7 @@ class MyMap extends React.Component {
         toFilter = ['all', ['!in', 'wdpaid'].concat(changedPAs).concat(newPAs).concat(geometryChangedPAs),['in', 'iso3', this.country.iso3]];
         //the toPoints layer should exclude all new point PAs (which will be shown in blue)
         toPointsFilter = ['all', ['!in', 'wdpaid'].concat(newPAs),['in', 'iso3', this.country.iso3]];        
-        //the changed layer should exclude all of the other protected areas that have had their geometry shifted - these will be rendered with dashed outlines
+        //the changed layer should exclude all of the other protected areas that have had their geometry changed - these will be rendered with dashed outlines
         changedPAs = changedPAs.filter(item => !geometryChangedPAs.includes(item));
         break;
       default:
@@ -109,29 +111,40 @@ class MyMap extends React.Component {
             this.props.setMap(map);
           }}
         </MapContext.Consumer>
-        <Source id={window.SRC_FROM} tileJsonSource={{type: "vector", attribution: this.props.attribution, tiles: [ TILES_PREFIX + "wdpa_" + _from + "_polygons" + TILES_SUFFIX]}}/>
+        {/*sources for vector tiles*/}
+        <Source id={window.SRC_FROM_POLYGONS} tileJsonSource={{type: "vector", attribution: this.props.attribution, tiles: [ TILES_PREFIX + "wdpa_" + _from + "_polygons" + TILES_SUFFIX]}}/>
         <Source id={window.SRC_FROM_POINTS} tileJsonSource={{type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _from + "_points" + TILES_SUFFIX]}}/>
-        <Source id={window.SRC_TO} tileJsonSource={{type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _to + "_polygons" + TILES_SUFFIX]}}/>
+        <Source id={window.SRC_TO_POLYGONS} tileJsonSource={{type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _to + "_polygons" + TILES_SUFFIX]}}/>
         <Source id={window.SRC_TO_POINTS} tileJsonSource={{type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _to + "_points" + TILES_SUFFIX]}}/> 
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM} type="fill" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "none"}} paint={P_TO_POLYGON}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_SHIFTED_LINE} type="line" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryShiftedPAs)} paint={P_FROM_GEOMETRY_SHIFTED_LINE}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE} type="line" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryPointCountChangedPAs)} paint={P_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE}/>
-        <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON} type="circle" sourceLayer={"wdpa_" + _from + "_points"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryPointToPolygonPAs)} paint={P_FROM_GEOMETRY_POINT_TO_POLYGON}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_DELETED_POLYGON} type="fill" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} paint={P_FROM_DELETED_POLYGON} filter={['in', 'wdpaid'].concat(deletedPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        {/*deleted layers*/}
+        <Layer sourceId={window.SRC_FROM_POLYGONS} id={window.LYR_FROM_DELETED_POLYGON} type="fill" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} paint={P_FROM_DELETED_POLYGON} filter={['in', 'wdpaid'].concat(deletedPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
         <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_DELETED_POINT} type="circle" sourceLayer={"wdpa_" + _from + "_points"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(deletedPAs)} paint={P_FROM_DELETED_POINT} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_POLYGON} filter={toFilter} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_CHANGED_ATTRIBUTE} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_ATTRIBUTE} filter={['in', 'wdpaid'].concat(changedPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_CHANGED_GEOMETRY} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY} filter={['in', 'wdpaid'].concat(geometryChangedPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_CHANGED_GEOMETRY_LINE} type="line" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY_LINE} filter={['in', 'wdpaid'].concat(geometryChangedPAs)}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_NEW_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_NEW_POLYGON} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
-        <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_NEW_POINT} type="circle" sourceLayer={"wdpa_" + _to + "_points"} layout={{visibility: "visible"}} paint={P_TO_NEW_POINT} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        {/*no change layers*/}
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_POLYGON} filter={toFilter} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
         <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_POINT} type="circle" sourceLayer={"wdpa_" + _to + "_points"} layout={{visibility: "visible"}} paint={P_TO_POINT} filter={toPointsFilter} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        {/*attribute change layers*/}
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_CHANGED_ATTRIBUTE} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_ATTRIBUTE} filter={['in', 'wdpaid'].concat(changedPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        {/*geometry change layers - from*/}
+        <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON} type="circle" sourceLayer={"wdpa_" + _from + "_points"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryPointToPolygonPAs)} paint={P_FROM_GEOMETRY_POINT_TO_POLYGON}/>
+        <Layer sourceId={window.SRC_FROM_POLYGONS} id={window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE} type="line" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryPointCountChangedPAs)} paint={P_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE}/>
+        <Layer sourceId={window.SRC_FROM_POLYGONS} id={window.LYR_FROM_GEOMETRY_SHIFTED_LINE} type="line" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['in', 'wdpaid'].concat(geometryShiftedPAs)} paint={P_FROM_GEOMETRY_SHIFTED_LINE}/>
+        {/*geometry change layers - to*/}
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_GEOMETRY_POINT_TO_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY} filter={['in', 'wdpaid'].concat(geometryPointToPolygonPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE} type="line" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY_LINE} filter={['in', 'wdpaid'].concat(geometryPointToPolygonPAs)}/>
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY} filter={['in', 'wdpaid'].concat(geometryPointCountChangedPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE} type="line" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY_LINE} filter={['in', 'wdpaid'].concat(geometryPointCountChangedPAs)}/>
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_GEOMETRY_SHIFTED_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY} filter={['in', 'wdpaid'].concat(geometryShiftedPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE} type="line" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_CHANGED_GEOMETRY_LINE} filter={['in', 'wdpaid'].concat(geometryShiftedPAs)}/>
+        {/*new layers*/}
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_NEW_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_TO_NEW_POLYGON} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_NEW_POINT} type="circle" sourceLayer={"wdpa_" + _to + "_points"} layout={{visibility: "visible"}} paint={P_TO_NEW_POINT} filter={['in', 'wdpaid'].concat(newPAs)} onMouseEnter={this.props.onMouseEnter} onMouseLeave={this.props.onMouseLeave}/>
+        {/*selection layers*/}
         <Layer sourceId={window.SRC_FROM_POINTS} id={window.LYR_FROM_SELECTED_POINT} type="circle" sourceLayer={"wdpa_" + _from + "_points"} layout={{visibility: "visible"}} filter={['==', 'wdpaid','-1']} paint={P_SELECTED_POINT}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['==','wdpaid','-1']} paint={P_SELECTED_LINE}/>
-        <Layer sourceId={window.SRC_FROM} id={window.LYR_FROM_SELECTED_POLYGON} type="fill" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['==','wdpaid','-1']} paint={P_SELECTED_POLYGON}/>
+        <Layer sourceId={window.SRC_FROM_POLYGONS} id={window.LYR_FROM_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['==','wdpaid','-1']} paint={P_SELECTED_LINE}/>
+        <Layer sourceId={window.SRC_FROM_POLYGONS} id={window.LYR_FROM_SELECTED_POLYGON} type="fill" sourceLayer={"wdpa_" + _from + "_polygons"} layout={{visibility: "visible"}} filter={['==','wdpaid','-1']} paint={P_SELECTED_POLYGON}/>
         <Layer sourceId={window.SRC_TO_POINTS} id={window.LYR_TO_SELECTED_POINT} type="circle" sourceLayer={"wdpa_" + _to + "_points"} layout={{visibility: "visible"}} filter={['==', 'wdpaid','-1']} paint={P_SELECTED_POINT}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_SELECTED_LINE} filter={['==', 'wdpaid','-1']}/>
-        <Layer sourceId={window.SRC_TO} id={window.LYR_TO_SELECTED_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_SELECTED_POLYGON} filter={['==', 'wdpaid','-1']}/>
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_SELECTED_LINE} type="line" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_SELECTED_LINE} filter={['==', 'wdpaid','-1']}/>
+        <Layer sourceId={window.SRC_TO_POLYGONS} id={window.LYR_TO_SELECTED_POLYGON} type="fill" sourceLayer={"wdpa_" + _to + "_polygons"} layout={{visibility: "visible"}} paint={P_SELECTED_POLYGON} filter={['==', 'wdpaid','-1']}/>
         {countryPopups}
       </Map>
     );

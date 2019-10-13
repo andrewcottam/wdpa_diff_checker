@@ -1,26 +1,3 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #09d3ac;
-}
-
 .appBar {
   position: fixed;
   left: 50%;
@@ -28,19 +5,66 @@
   top: 0px;
   transform: translate(-50%, 0px);
   z-index: 100000;
+  border-radius: 4px !important;
+  border: 1px solid lightgray;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 .appBarPaper {}
 
 .appBarTitle {
+  padding: 7px;
   background-color: aliceblue;
+  border-bottom: 1px solid lightgray;
+}
+
+.appBarContent {
+  padding: 7px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.fromVersion {
+  display: inline;
+  left: 0px;
+}
+
+.toVersion {
+  position: absolute;
+  display: inline;
+  right: 10px;
+}
+
+.footerBar {
+  position: fixed;
+  left: 50%;
+  display: flex;
+  bottom: 30px;
+  border-radius: 4px !important;
+  border: 1px solid lightgray;
+  overflow: hidden;
+  transform: translate(-50%, 0px);
+  z-index: 100000;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+
+}
+
+.footerBarPaper {}
+
+.footerBarTitle {
+  background-color: aliceblue;
+  padding: 9px 7px;
+  border-right: 1px solid lightgray;
+  text-align: center;
+}
+
+.footerBarContent {
   padding: 10px;
-  border-bottom: 2px solid lightgray;
-  font-weight: 700;
+  font-size: 10px;
+  background-color: white;
 }
-.appBarContent{
-  padding:10px;
-}
+
 .mapboxgl-popup-content {
   padding: 0px !important;
   border-radius: 3px !important;
@@ -54,9 +78,10 @@
 }
 
 .countryPopup .name {
-  padding: 1px 5px;
+  padding: 1px 8px;
   background: aliceblue;
   min-width: 40px;
+  border-bottom: 1px solid lightgray;
 }
 
 .countryPopup .stats {
@@ -128,6 +153,7 @@
   padding-left: 8px;
   float: right;
   font-size: 10px;
+  text-decoration: underline;
 }
 
 .paPopupHeaderRow {
@@ -145,5 +171,5 @@
 }
 
 .geometryChangeDiv {
-  padding: 5px 10px;
+  padding: 5px 0px;
 }

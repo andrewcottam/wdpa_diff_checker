@@ -18,24 +18,35 @@
     <script>
       window.MAP_STYLE_DEFAULT = "mapbox://styles/blishten/ck1hsullb06lw1cmyzz7wrycl"; //mapbox light v7 style without the national parks, national park labels or landuse
       //source names
-      window.SRC_FROM = "wdpa_from";
+      window.SRC_FROM_POLYGONS = "wdpa_from_polygons";
       window.SRC_FROM_POINTS = "wdpa_from_points";
-      window.SRC_TO = "wdpa_to";
+      window.SRC_TO_POLYGONS = "wdpa_to_polygons";
       window.SRC_TO_POINTS = "wdpa_to_points";
       //layer names
-      window.LYR_FROM = "from";
-      window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON = "from_geometry_point_to_polygon";
-      window.LYR_FROM_GEOMETRY_SHIFTED_LINE = "from_geometry_shifted";
-      window.LYR_FROM_DELETED_POLYGON = "from_deleted_polygon";
-      window.LYR_FROM_DELETED_POINT = "from_deleted_point";
-      window.LYR_TO_POLYGON = "to_polygon";
-      window.LYR_TO_POINT = "to_point";
-      window.LYR_TO_CHANGED_ATTRIBUTE = "to_changed";
-      window.LYR_TO_CHANGED_GEOMETRY = "to_changed_geometry";
-      window.LYR_TO_CHANGED_GEOMETRY_LINE = "to_changed_geometry_line";
+      //new layers
       window.LYR_TO_NEW_POLYGON = "to_new_polygon";
       window.LYR_TO_NEW_POINT = "to_new_point";
       window.LYR_TO_LABEL = "to_label";
+      //deleted layers
+      window.LYR_FROM_DELETED_POLYGON = "from_deleted_polygon";
+      window.LYR_FROM_DELETED_POINT = "from_deleted_point";
+      //attribute change layer
+      window.LYR_TO_CHANGED_ATTRIBUTE = "to_changed";
+      //geometry change layers - original geometries
+      window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON = "from_geometry_point_to_polygon"; //for rendering point to polygons
+      window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE = "from_geometry_point_count_changed_line"; //for rendering geometries before they were changed
+      window.LYR_FROM_GEOMETRY_SHIFTED_LINE = "from_geometry_shifted"; //for geometries before they shifted
+      //geometry change layers - new geometries
+      window.LYR_TO_GEOMETRY_POINT_TO_POLYGON = "to_geometry_point_to_polygon"; 
+      window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE = "to_geometry_point_to_polygon_line"; 
+      window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON = "to_geometry_point_count_changed_polygon";  
+      window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE = "to_geometry_point_count_changed_polygon_ine";  
+      window.LYR_TO_GEOMETRY_SHIFTED_POLYGON = "to_geometry_shifted_polygon"; 
+      window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE = "to_geometry_shifted_polygon_line"; 
+      //no change layers
+      window.LYR_TO_POLYGON = "to_polygon";
+      window.LYR_TO_POINT = "to_point";
+      //selection layers
       window.LYR_FROM_SELECTED_POINT = "from_selected_point";
       window.LYR_FROM_SELECTED_LINE = "from_selected_line";
       window.LYR_FROM_SELECTED_POLYGON = "from_selected_polygon";
@@ -43,29 +54,10 @@
       window.LYR_TO_SELECTED_LINE = "to_selected_line";
       window.LYR_TO_SELECTED_POLYGON = "to_selected_polygon";
     </script>
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
     <title>React App</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
   </body>
 </html>

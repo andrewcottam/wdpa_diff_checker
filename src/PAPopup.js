@@ -18,7 +18,7 @@ class PAPopup extends React.Component {
 		if (pa_data.geometry_change && pa_data.geometry_change === "point to polygon"){
 			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POINTS, {sourceLayer: "wdpa_aug_2019_points", filter: ["==", "wdpaid", props.wdpaid]})[0];
 		}else{
-			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM, {sourceLayer: "wdpa_aug_2019_polygons", filter: ["==", "wdpaid", props.wdpaid]})[0];
+			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POLYGONS, {sourceLayer: "wdpa_aug_2019_polygons", filter: ["==", "wdpaid", props.wdpaid]})[0];
 		}
 		//attributes have changed - make an array of the data
 		if (pa_data.attribute_change){
@@ -40,9 +40,11 @@ class PAPopup extends React.Component {
 		let children, status="";
 		switch (feature.layer.id) {
 			case window.LYR_TO_CHANGED_ATTRIBUTE:
-			case window.LYR_TO_CHANGED_GEOMETRY:
+			case window.LYR_TO_GEOMETRY_POINT_TO_POLYGON:
+			case window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON:
+			case window.LYR_TO_GEOMETRY_SHIFTED_POLYGON:
 				let changedData = this.getChangedData(feature);
-				children = <Changed changedData={changedData} fromVersion={this.props.fromVersion.abbreviated} toVersion={this.props.toVersion.abbreviated}/>;
+				children = <Changed statuses={this.props.statuses} changedData={changedData} fromVersion={this.props.fromVersion.abbreviated} toVersion={this.props.toVersion.abbreviated}/>;
 				status = "changed";
 				break;
 			case window.LYR_TO_NEW_POLYGON:

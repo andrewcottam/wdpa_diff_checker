@@ -10,6 +10,7 @@ class Changed extends React.Component {
 		return <div title={row.original.current}>{row.original.current}</div>;        
 	}
 	render() {
+		let status = this.props.statuses.find(item => {return (this.props.changedData.geometryData === item.key)});
 		return (
 		    (this.props.changedData && ((this.props.changedData.attributesData && this.props.changedData.attributesData.length>0) || (this.props.changedData.geometryData))) ?
 		    <React.Fragment>
@@ -24,11 +25,7 @@ class Changed extends React.Component {
 	                    columns={[{ Header: 'Attribute', accessor: 'attribute',headerStyle: { 'textAlign': 'left' }}, { Header: this.props.fromVersion.title, accessor: 'previous',headerStyle: { 'textAlign': 'left' }, Cell: this.renderFrom.bind(this)}, { Header: this.props.toVersion.title, accessor: 'current',headerStyle: { 'textAlign': 'left' }, Cell: this.renderTo.bind(this)}]}
 	        		/> 
 	        	</React.Fragment> : null}
-	        	{(this.props.changedData.geometryData) ?
-				<React.Fragment>
-					<div className={'paPopupChangeType'}>The geometry has changed:</div>
-					<div className={'geometryChangeDiv'}>{this.props.changedData.geometryData}</div>
-				</React.Fragment> : null}
+	        	{(this.props.changedData.geometryData) ? <div className={'geometryChangeDiv'}>{status && status.text}</div> : null}
         	</React.Fragment>
     		: null
 		);

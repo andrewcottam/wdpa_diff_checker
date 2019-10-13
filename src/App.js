@@ -7,11 +7,25 @@ import PAPopup from './PAPopup.js';
 import PAPopupList from './PAPopupList.js';
 import parse from 'color-parse';
 import AppBar from './AppBar.js';
+import FooterBar from './FooterBar.js';
 
 const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
 // const REST_BASE_URL = "https://rest-services.jrc.ec.europa.eu/services/marxan_vt/services/";
 const USE_SELECTION_COLOR = false; //set to true to disable the selection using the color of the polygon - it will use the P_SELECTION_ colors in MyMap.js
 let versions = [{title: "August 2019"},{title: "September 2019"}];
+//defines which layers will be highlighted when the mouse moves over the source layer - each layer in the highlight layers will be highlighted using the paint properties from the paintPropertyFrom layer
+let hightlightRules = [
+  {sourceLayer: window.LYR_TO_NEW_POLYGON, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_NEW_POLYGON}]},
+  {sourceLayer: window.LYR_TO_NEW_POINT, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POINT, paintPropertyFrom: window.LYR_TO_NEW_POINT}]},
+  {sourceLayer: window.LYR_FROM_DELETED_POLYGON, highlightLayers: [{layer: window.LYR_FROM_SELECTED_POLYGON, paintPropertyFrom: window.LYR_FROM_DELETED_POLYGON}]},
+  {sourceLayer: window.LYR_FROM_DELETED_POINT, highlightLayers: [{ layer: window.LYR_FROM_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_DELETED_POINT}]},
+  {sourceLayer: window.LYR_TO_CHANGED_ATTRIBUTE, highlightLayers: [{layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_CHANGED_ATTRIBUTE}]},
+  {sourceLayer: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON, highlightLayers: [{layer: window.LYR_FROM_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON},{layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON},{layer: window.LYR_TO_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE}]},
+  {sourceLayer: window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON, highlightLayers: [{layer: window.LYR_FROM_SELECTED_LINE, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE},{layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON},{layer: window.LYR_TO_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE}]},
+  {sourceLayer: window.LYR_TO_GEOMETRY_SHIFTED_POLYGON, highlightLayers: [{layer: window.LYR_FROM_SELECTED_LINE, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE},{layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON},{layer: window.LYR_TO_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE}]},
+  {sourceLayer: window.LYR_TO_POLYGON, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_POLYGON},{ layer: window.LYR_FROM_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON}]},
+  {sourceLayer: window.LYR_TO_POINT, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POINT, paintPropertyFrom: window.LYR_TO_POINT}]}
+];
 
 class App extends React.Component {
   constructor(props) {
@@ -21,7 +35,15 @@ class App extends React.Component {
       country_summary: [],
       country_pa_diffs: [],
       showStatuses: ['new','deleted'], 
-      view: 'global'
+      view: 'global',
+      statuses: [
+        {key:"new", text:"Added", short_text:"Added", present: false, visible: true, layers:[window.LYR_TO_NEW_POLYGON, window.LYR_TO_NEW_POINT]},
+        {key:"deleted", text:"Removed", short_text:"Removed", present: false, visible: true, layers:[window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT]},
+        {key:"changed", text:"Attribute", short_text:"Attribute", present: false, visible: true, layers:[window.LYR_TO_CHANGED_ATTRIBUTE]},
+        {key:"point to polygon", text:"The geometry has changed from a point to a polygon", short_text:"Geometry: pt -> poly", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE]},
+        {key:"point count", text:"The geometry has been modified", short_text:"Geometry: changed", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE]},
+        {key:"geometry shifted", text:"The geometry has moved", short_text:"Geometry: moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
+        ]
     };
     this.mouseOverPAPopup = false;
     this.mouseOverPAPopuplist = false;
@@ -95,6 +117,25 @@ class App extends React.Component {
   hideCountryPopups() {
     if (this.state.view === 'global') this.setState({ global_summary:[] });
   }
+  setStatusPresence(records){
+    let _statuses = this.state.statuses;
+    let _presences = records.map(item=>{return item.status});
+    _statuses = _statuses.map(status => {
+      return Object.assign(status, {present: _presences.indexOf(status.key) !== -1});
+    });
+    this.setState({statuses: _statuses});
+  }
+  handleStatusChange(e){
+    let _statuses = this.state.statuses;
+    _statuses = _statuses.map(status => {
+      return Object.assign(status, {visible: (status.key === e.key) ? !status.visible : status.visible});
+    });
+    this.setState({statuses: _statuses});
+    //set the layer(s) visibility directly on the map (to avoid an update of the map state)  
+    e.layers.forEach(layer => {
+      this.map.setLayoutProperty(layer, "visibility", (e.visible) ? "visible" : "none" );
+    });
+  }
   //fired when the user clicks on a country popup
   clickCountryPopup(country) {
     //set the bounds of the map
@@ -105,6 +146,8 @@ class App extends React.Component {
     this.setState({view: "country"});
     //get the country diff summary
     this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?format=json&iso3=" + country.iso3).then(response => {
+      //set the visibility of the statuses in the statuses array
+      this.setStatusPresence(response.records);
       this.setState({country_summary: response.records});
     });
     //get the individual changes in the protected areas
@@ -186,16 +229,6 @@ class App extends React.Component {
   highlightFeature(feature){
     //reset the selected layers
     this.deselectFeatures();
-    let hightlightRules = [
-      {sourceLayer: window.LYR_FROM_DELETED_POLYGON, highlightLayers: [{layer: window.LYR_FROM_SELECTED_POLYGON, paintPropertyFrom: window.LYR_FROM_DELETED_POLYGON}]},
-      {sourceLayer: window.LYR_FROM_DELETED_POINT, highlightLayers: [{ layer: window.LYR_FROM_GEOMETRY_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_DELETED_POINT}]},
-      {sourceLayer: window.LYR_TO_CHANGED_GEOMETRY, highlightLayers: [{layer: window.LYR_TO_SELECTED_LINE, paintPropertyFrom: window.LYR_TO_CHANGED_GEOMETRY_LINE},{layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_CHANGED_GEOMETRY},{layer: window.LYR_FROM_SELECTED_LINE, paintPropertyFrom: window.LYR_FROM_GEOMETRY_SHIFTED_LINE},{layer: window.LYR_FROM_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON}]},
-      {sourceLayer: window.LYR_TO_CHANGED_ATTRIBUTE, highlightLayers: [{layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_CHANGED_ATTRIBUTE}]},
-      {sourceLayer: window.LYR_TO_NEW_POLYGON, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_NEW_POLYGON}]},
-      {sourceLayer: window.LYR_TO_NEW_POINT, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POINT, paintPropertyFrom: window.LYR_TO_NEW_POINT}]},
-      {sourceLayer: window.LYR_TO_POLYGON, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_POLYGON},{ layer: window.LYR_FROM_SELECTED_POINT, paintPropertyFrom: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON}]},
-      {sourceLayer: window.LYR_TO_POINT, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POINT, paintPropertyFrom: window.LYR_TO_POINT}]}
-    ];
     //get the rule for the layer  
     let rule = hightlightRules.find(_rule => _rule.sourceLayer === feature.layer.id);
     //iterate through the layers that need to be highlighted
@@ -275,6 +308,7 @@ class App extends React.Component {
           showCountryPopups={this.showCountryPopups.bind(this)}
           setMap={this.setMap.bind(this)}
           showStatuses={this.state.showStatuses}
+          statuses={this.state.statuses}
           clickCountryPopup={this.clickCountryPopup.bind(this)}
           onMouseEnter={this.onMouseEnter.bind(this)}
           onMouseLeave={this.onMouseLeave.bind(this)}
@@ -282,8 +316,9 @@ class App extends React.Component {
           attribution={"IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) August, 2019, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>"}
         />
         <PAPopupList dataForPopupList={this.state.dataForPopupList} country_pa_diffs={this.state.country_pa_diffs} map={this.map} showPAPopup={this.showPAPopupFromList.bind(this)} onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}/> 
-        <PAPopup dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
-        <AppBar fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} showAllNoChanges={this.showAllNoChanges.bind(this)} showChangesNew={this.showChangesWithStatus.bind(this, "new")} showChangesDeleted={this.showChangesWithStatus.bind(this, "deleted")} showChangesChanged={this.showChangesWithStatus.bind(this, "changed")}/>
+        <PAPopup statuses={this.state.statuses} dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
+        <AppBar fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} />
+        <FooterBar statuses={this.state.statuses} handleStatusChange={this.handleStatusChange.bind(this)}/>
       </React.Fragment>
     );
   }
