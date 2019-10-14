@@ -93,11 +93,11 @@
   padding-right: 4px;
 }
 
-.new {
+.added {
   color: rgb(63, 127, 191);
 }
 
-.deleted {
+.removed {
   color: red;
 }
 

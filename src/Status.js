@@ -5,10 +5,10 @@ class Status extends React.Component {
 	    let classname = "stat " + this.props.status;
 	    let text="";
 	    switch (this.props.status) {
-	        case 'new':
+	        case 'added':
 	            text = "++";
 	            break;
-	        case 'deleted':
+	        case 'removed':
 	            text = "--";
 	            break;
 	        case 'changed':

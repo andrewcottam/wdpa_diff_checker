@@ -34,15 +34,15 @@ class App extends React.Component {
       global_summary: [],
       country_summary: [],
       country_pa_diffs: [],
-      showStatuses: ['new','deleted'], 
+      showStatuses: ['added','removed'], 
       view: 'global',
       statuses: [
-        {key:"new", text:"Added", short_text:"Added", present: false, visible: true, layers:[window.LYR_TO_NEW_POLYGON, window.LYR_TO_NEW_POINT]},
-        {key:"deleted", text:"Removed", short_text:"Removed", present: false, visible: true, layers:[window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT]},
+        {key:"added", text:"Added", short_text:"Added", present: false, visible: true, layers:[window.LYR_TO_NEW_POLYGON, window.LYR_TO_NEW_POINT]},
+        {key:"removed", text:"Removed", short_text:"Removed", present: false, visible: true, layers:[window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT]},
         {key:"changed", text:"Attribute", short_text:"Attribute", present: false, visible: true, layers:[window.LYR_TO_CHANGED_ATTRIBUTE]},
-        {key:"point to polygon", text:"The geometry has changed from a point to a polygon", short_text:"Geometry: pt -> poly", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE]},
-        {key:"point count", text:"The geometry has been modified", short_text:"Geometry: changed", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE]},
-        {key:"geometry shifted", text:"The geometry has moved", short_text:"Geometry: moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
+        {key:"point_to_polygon", text:"The geometry has changed from a point to a polygon", short_text:"Geometry: pt -> poly", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE]},
+        {key:"point_count_changed", text:"The geometry has been modified", short_text:"Geometry: changed", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE]},
+        {key:"geometry_shifted", text:"The geometry has moved", short_text:"Geometry: moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
         ]
     };
     this.mouseOverPAPopup = false;
@@ -84,7 +84,7 @@ class App extends React.Component {
       let countryData;
       //get the country reference data from the cached geojson data
       let countriesJson = JSON.parse(JSON.stringify(geojson));
-      //get the countries that have changes in this version
+      //get the country statistics in this version
       this._get(REST_BASE_URL + "get_wdpa_diff_global_summary?format=json").then(response => {
         let global_summary_all = response.records.map(country => {
           //find the matching item from the countries.json array
@@ -106,7 +106,7 @@ class App extends React.Component {
   getVisibleCountries(){
     //iterate through the countries and get only the ones that will be shown
     let global_summary = this.global_summary_all.filter((country) => {
-      return (this.isCountryVisible('new', country) || this.isCountryVisible('deleted', country) || this.isCountryVisible('changed', country));
+      return (this.isCountryVisible('added', country) || this.isCountryVisible('removed', country) || this.isCountryVisible('changed', country));
     });
     //set the state - this creates the country popups on the map
     this.setState({global_summary: global_summary});
@@ -276,7 +276,7 @@ class App extends React.Component {
   }
 
   showAllNoChanges(_show){
-    let statuses = (_show) ? ['new','deleted','changed'] : [];
+    let statuses = (_show) ? ['added','removed','changed'] : [];
     this.showChanges(statuses);
   }
   showChangesWithStatus(status, _show){
