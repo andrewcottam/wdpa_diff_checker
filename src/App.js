@@ -43,6 +43,7 @@ class App extends React.Component {
         {key:"point_to_polygon", text:"The geometry has changed from a point to a polygon", short_text:"Geometry: pt -> poly", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE]},
         {key:"point_count_changed", text:"The geometry has been modified", short_text:"Geometry: changed", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE]},
         {key:"geometry_shifted", text:"The geometry has moved", short_text:"Geometry: moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
+        {key:"no_change", text:"No change", short_text:"No change", present: false, visible: true, layers:[window.LYR_TO_POLYGON, window.LYR_TO_POINT]},
         ]
     };
     this.mouseOverPAPopup = false;
@@ -117,11 +118,19 @@ class App extends React.Component {
   hideCountryPopups() {
     if (this.state.view === 'global') this.setState({ global_summary:[] });
   }
-  setStatusPresence(records){
+  //iterates through the country summary data and sets a flag in the status array if they are visible
+  setStatusPresence(records, iso3){
     let _statuses = this.state.statuses;
     let _presences = records.map(item=>{return item.status});
     _statuses = _statuses.map(status => {
-      return Object.assign(status, {present: _presences.indexOf(status.key) !== -1});
+      if (status.key !== "no_change"){
+        return Object.assign(status, {present: _presences.indexOf(status.key) !== -1});
+      }else{
+        //the no_change status is handled differently as we dont want to retrieve all wdpaids for a country which havent changed as this is lots of data, potentially, but we can get the no_change country statistics from the global summary
+        let global_summary_data = this.global_summary_all.find(item => { return item.iso3 === iso3});
+        let no_change_status = _statuses.find(item => item.key === 'no_change');
+        return Object.assign(no_change_status, {present: global_summary_data.no_change !== null});
+      }
     });
     this.setState({statuses: _statuses});
   }
@@ -147,7 +156,7 @@ class App extends React.Component {
     //get the country diff summary
     this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?format=json&iso3=" + country.iso3).then(response => {
       //set the visibility of the statuses in the statuses array
-      this.setStatusPresence(response.records);
+      this.setStatusPresence(response.records, country.iso3);
       this.setState({country_summary: response.records});
     });
     //get the individual changes in the protected areas
