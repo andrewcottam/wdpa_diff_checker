@@ -148,11 +148,13 @@
 
 .paPopupNameLeft {}
 
-.paPopupNameRight {
-  cursor: pointer;
+.ppLink{
   padding-left: 8px;
   float: right;
   font-size: 10px;
+}
+.underline {
+  cursor: pointer;
   text-decoration: underline;
 }
 

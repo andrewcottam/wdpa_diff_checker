@@ -37,7 +37,8 @@ class PAPopup extends React.Component {
 		let left = this.props.dataForPopup.point.x + 35 + 'px';
 		let top = this.props.dataForPopup.point.y - 25 + 'px';
 		let feature = this.props.dataForPopup.features[0];
-		let children, status="";
+		let children, status="", link;
+		link = <span className={"ppLink underline"}><a href={URL_PP + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpaid}</a></span>;
 		switch (feature.layer.id) {
 			case window.LYR_TO_CHANGED_ATTRIBUTE:
 			case window.LYR_TO_GEOMETRY_POINT_TO_POLYGON:
@@ -55,6 +56,7 @@ class PAPopup extends React.Component {
 			case window.LYR_FROM_DELETED_POLYGON:
 			case window.LYR_FROM_DELETED_POINT:
 				children = <div className={'paPopupChangeType'}>This protected area was removed in {this.props.toVersion.title}</div>;
+				link = <span className={"ppLink"}></span>;
 				status = "removed";
 				break;
 			case window.LYR_TO_POLYGON:
@@ -68,7 +70,7 @@ class PAPopup extends React.Component {
 		return (
 			<div style={{'left': left,'top':top}} id="popup" onMouseEnter={this.props.onMouseEnterPAPopup} onMouseLeave={this.props.onMouseLeavePAPopup}>
 				<div className={'wdpaPopup'}>
-					<div className="paPopupName"><Status status={status}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span><span className={"paPopupNameRight"}><a href={URL_PP + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpaid}</a></span></div>
+					<div className="paPopupName"><Status status={status}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
 					<div className={'paPopupContent'}>
 						{children}
 					</div>
