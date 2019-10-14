@@ -54,7 +54,7 @@
 
 .footerBarTitle {
   background-color: aliceblue;
-  padding: 9px 7px;
+  padding: 7px;
   border-right: 1px solid lightgray;
   text-align: center;
 }
@@ -148,11 +148,12 @@
 
 .paPopupNameLeft {}
 
-.ppLink{
+.ppLink {
   padding-left: 8px;
   float: right;
   font-size: 10px;
 }
+
 .underline {
   cursor: pointer;
   text-decoration: underline;
@@ -174,4 +175,14 @@
 
 .geometryChangeDiv {
   padding: 5px 0px;
+}
+
+.statusCheckboxContainer {
+  display: inline;
+  padding: 6px;
+  font-size: 12px;
+}
+
+.statusCheckbox {
+  vertical-align: middle;
 }
