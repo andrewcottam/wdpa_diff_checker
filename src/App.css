@@ -20,7 +20,7 @@
 }
 
 .appBarContent {
-  padding: 7px;
+  padding: 40px;
   font-size: 14px;
   background-color: white;
 }
@@ -185,4 +185,7 @@
 
 .statusCheckbox {
   vertical-align: middle;
+}
+
+.MuiSlider-root{
 }

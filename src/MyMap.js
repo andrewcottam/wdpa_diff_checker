@@ -35,8 +35,13 @@ class MyMap extends React.Component {
     };
   }
   shouldComponentUpdate(nextProps, nextState) {
-    //this is a crude hack to compare properties -TODO SORT THIS OUT
-    return (JSON.stringify(this.props) !== JSON.stringify(nextProps))||(JSON.stringify(this.state) !== JSON.stringify(nextState)); 
+    // this is a crude hack to compare properties -TODO SORT THIS OUT
+    if (this.props.toVersion && this.props.toVersion.id !== nextProps.toVersion.id){
+      return true;
+      //there seems to be a bug where if the 
+    }else{
+      return (JSON.stringify(this.props) !== JSON.stringify(nextProps))||(JSON.stringify(this.state) !== JSON.stringify(nextState)); 
+    }
   }	
   clickCountryPopup(country){
     //set the currently selected country

@@ -12,7 +12,6 @@ import FooterBar from './FooterBar.js';
 const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
 // const REST_BASE_URL = "https://rest-services.jrc.ec.europa.eu/services/marxan_vt/services/";
 const USE_SELECTION_COLOR = false; //set to true to disable the selection using the color of the polygon - it will use the P_SELECTION_ colors in MyMap.js
-let versions = [{title: "August 2019"},{title: "September 2019"}];
 //defines which layers will be highlighted when the mouse moves over the source layer - each layer in the highlight layers will be highlighted using the paint properties from the paintPropertyFrom layer
 let hightlightRules = [
   {sourceLayer: window.LYR_TO_NEW_POLYGON, highlightLayers: [{ layer: window.LYR_TO_SELECTED_POLYGON, paintPropertyFrom: window.LYR_TO_NEW_POLYGON}]},
@@ -44,22 +43,32 @@ class App extends React.Component {
         {key:"point_count_changed", text:"The geometry has been modified", short_text:"Geometry: changed", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE]},
         {key:"geometry_shifted", text:"The geometry has moved", short_text:"Geometry: moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
         {key:"no_change", text:"No change", short_text:"No change", present: false, visible: true, layers:[window.LYR_TO_POLYGON, window.LYR_TO_POINT]},
-        ]
+        ], 
+      versions:  [{id:0, title: "August 2019"},{id:1, title: "September 2019"},{id:2, title:"October 2019"}]
+
     };
     this.mouseOverPAPopup = false;
     this.mouseOverPAPopuplist = false;
   }
   componentDidMount() {
     //get the abbreviated version data
-    versions = versions.map(version => {
-      return Object.assign(version, {abbreviated: version.title.toLowerCase().substr(0,3) + "_" + version.title.slice(-4)});
+    let _versions = this.state.versions.map(version => {
+      return Object.assign(version, {abbreviated: version.title.toLowerCase().substr(0,3) + "_" + version.title.slice(-4), shortTitle: version.title.substr(0,3) + " " + version.title.slice(-2)});
     });
-    //set the version
-    this.setState({fromVersion: versions[0], toVersion: versions[1]});
+    this.setState({versions: _versions}, () => {
+      //set the version
+      this.setState({fromVersion: this.state.versions[0], toVersion: this.state.versions[1]},() => {
+        this.versionChanged();
+      });
+    });
+  }
+  versionChanged(){
     //get the global diff summary
     this.getGlobalSummary().then(() => {
       //filter the countries for those that have diff data
       this.getVisibleCountries();
+      //update the maps sourceLayer properties for each layer - this is a bug in the React Mapbox component
+      
     });
   }
   getAbbreviatedVersion(fullVersion){
@@ -86,7 +95,7 @@ class App extends React.Component {
       //get the country reference data from the cached geojson data
       let countriesJson = JSON.parse(JSON.stringify(geojson));
       //get the country statistics in this version
-      this._get(REST_BASE_URL + "get_wdpa_diff_global_summary?format=json").then(response => {
+      this._get(REST_BASE_URL + "get_wdpa_diff_global_summary?version=" + this.state.toVersion.id + "&format=json").then(response => {
         let global_summary_all = response.records.map(country => {
           //find the matching item from the countries.json array
           countryData = countriesJson.features.find(feature => feature.properties.iso3 === country.iso3);
@@ -154,13 +163,13 @@ class App extends React.Component {
     //set the view type
     this.setState({view: "country"});
     //get the country diff summary
-    this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?format=json&iso3=" + country.iso3).then(response => {
+    this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
       //set the visibility of the statuses in the statuses array
       this.setStatusPresence(response.records, country.iso3);
       this.setState({country_summary: response.records});
     });
     //get the individual changes in the protected areas
-    this._get(REST_BASE_URL + "get_wdpa_diff_country_diffs?format=json&iso3=" + country.iso3).then(response => {
+    this._get(REST_BASE_URL + "get_wdpa_diff_country_diffs?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
       if (response.records.length>0) this.setState({country_pa_diffs: response.records});
     });
   }
@@ -302,6 +311,13 @@ class App extends React.Component {
       this.getVisibleCountries();  
     });
   }
+  setVersion(version){
+    this.setState({fromVersion: this.state.versions[version-1], toVersion: this.state.versions[version]},() => {
+      this.versionChanged();
+      console.log(this.map.getStyle().sources.wdpa_to_polygons.tiles[0].substr(60));
+      console.log(this.map.getStyle().layers[85]["source-layer"]);
+    });
+  }
   render() {
     //clear any timers to close the PAPopup
     clearTimeout(this.PAPopuptimer);
@@ -326,7 +342,7 @@ class App extends React.Component {
         />
         <PAPopupList dataForPopupList={this.state.dataForPopupList} country_pa_diffs={this.state.country_pa_diffs} map={this.map} showPAPopup={this.showPAPopupFromList.bind(this)} onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}/> 
         <PAPopup statuses={this.state.statuses} dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
-        <AppBar fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} />
+        <AppBar setVersion={this.setVersion.bind(this)} versions={this.state.versions} version={this.state.toVersion}/>
         <FooterBar statuses={this.state.statuses} handleStatusChange={this.handleStatusChange.bind(this)}/>
       </React.Fragment>
     );
