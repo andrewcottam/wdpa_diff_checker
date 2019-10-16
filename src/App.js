@@ -49,6 +49,7 @@ class App extends React.Component {
     };
     this.mouseOverPAPopup = false;
     this.mouseOverPAPopuplist = false;
+    this.PAPopuptimer = []; //manages all of the timers that are created when the mouse leaves a feature
   }
   componentDidMount() {
     //get the abbreviated version data
@@ -76,7 +77,7 @@ class App extends React.Component {
     if (features.length>0) {
       let wdpaids = features.map(feature=>{return feature.properties.wdpaid;});
       // console.log(wdpaids.join(","));
-      console.log(features);
+      // console.log(features);
     }
   }
   versionChanged(){
@@ -193,6 +194,7 @@ class App extends React.Component {
       if (response.records.length>0) this.setState({country_pa_diffs: response.records});
     });
   }
+  //TODO: Solve why this is called multiple times when the mouse enters a feature
   onMouseEnter(e){
     if (this.state.view === 'global') return;
     let wdpaids =[];
@@ -211,9 +213,9 @@ class App extends React.Component {
     Object.assign(e, {features: features});
     //if only one feature - show the PAPopup
     if (e.features.length === 1) {
-      this.showPAPopup(e);
       //clear any timers to close the PAPopup
-      clearTimeout(this.PAPopuptimer);
+      this.PAPopuptimer.forEach(timer=>{ clearTimeout(timer)});
+      this.showPAPopup(e);
     }else{ //show the PAPopuplist
       this.showPAPopuplist(e);
       clearTimeout(this.PAPopupListtimer);
@@ -242,10 +244,9 @@ class App extends React.Component {
   }
   closePAPopup(ms){
     //wait for a bit before closing the popup - the user may want to interact with it
-    this.PAPopuptimer = setTimeout(()=>{
+    this.PAPopuptimer.push(setTimeout(()=>{
       if (!this.mouseOverPAPopup) this.setState({dataForPopup: undefined});
-    }, ms);  
-    console.log(this.PAPopuptimer);
+    }, ms));  
   }
   closePAPopuplist(ms){
     this.PAPopupListtimer = setTimeout(()=>{
