@@ -44,8 +44,8 @@ class App extends React.Component {
         {key:"geometry_shifted", text:"The geometry has moved", short_text:"Geometry: moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
         {key:"no_change", text:"No change", short_text:"No change", present: false, visible: true, layers:[window.LYR_TO_POLYGON, window.LYR_TO_POINT]},
         ], 
-      versions:  [{id:0, title: "August 2019"},{id:1, title: "September 2019"},{id:2, title:"October 2019"}]
-
+      versions:  [{id:0, title: "August 2019"},{id:1, title: "September 2019", selected: true},{id:2, title:"October 2019"}],
+      showChanges: false
     };
     this.mouseOverPAPopup = false;
     this.mouseOverPAPopuplist = false;
@@ -55,27 +55,47 @@ class App extends React.Component {
     let _versions = this.state.versions.map(version => {
       return Object.assign(version, {abbreviated: version.title.toLowerCase().substr(0,3) + "_" + version.title.slice(-4), shortTitle: version.title.substr(0,3) + " " + version.title.slice(-2)});
     });
+    let selectedVersion = _versions.find(version => version.hasOwnProperty("selected")).id;
     this.setState({versions: _versions}, () => {
       //set the version
-      this.setState({fromVersion: this.state.versions[0], toVersion: this.state.versions[1]},() => {
+      this.setState({fromVersion: this.state.versions[selectedVersion-1], toVersion: this.state.versions[selectedVersion]},() => {
         this.versionChanged();
       });
     });
   }
+  //get a pointer to the mapbox gl map
+  setMap(map){
+    this.map = map;
+    //add event handlers to the map
+    this.map.on("mousemove", this.mouseMove.bind(this));
+    //set the version
+    this.versionChanged();
+  }
+  mouseMove(e){
+    var features = this.map.queryRenderedFeatures(e.point,{layers: [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT]});
+    if (features.length>0) {
+      let wdpaids = features.map(feature=>{return feature.properties.wdpaid;});
+      // console.log(wdpaids.join(","));
+      console.log(features);
+    }
+  }
   versionChanged(){
-    //get the global diff summary
-    this.getGlobalSummary().then(() => {
-      //filter the countries for those that have diff data
-      this.getVisibleCountries();
-      //update the maps sourceLayer properties for each layer - this is a bug in the React Mapbox component
-      
-    });
+    if (this.state.showChanges){
+      //get the global diff summary
+      this.getGlobalSummary().then(() => {
+        //filter the countries for those that have diff data
+        this.getVisibleCountries();
+      });
+    }else{
+      //change the vector tiles and map them
+      if (this.map) this.hideChanges();
+    }
+  }
+  hideChanges(){
+    this.setState({global_summary: []});  
   }
   getAbbreviatedVersion(fullVersion){
     return fullVersion.toLowerCase().substr(0,3) + "_" + fullVersion.slice(-4);
-  }
-  setMap(map){
-    this.map = map;
   }
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   _get(url, params) {
@@ -112,7 +132,7 @@ class App extends React.Component {
   isCountryVisible(status, country){
     return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] !== null); 
   }
-  //filters the global summary for only the countries that need to be shown
+  //filters the global summary for only the countries that need to be shown based on the statuses that the user wants to see
   getVisibleCountries(){
     //iterate through the countries and get only the ones that will be shown
     let global_summary = this.global_summary_all.filter((country) => {
@@ -192,14 +212,17 @@ class App extends React.Component {
     //if only one feature - show the PAPopup
     if (e.features.length === 1) {
       this.showPAPopup(e);
+      //clear any timers to close the PAPopup
+      clearTimeout(this.PAPopuptimer);
     }else{ //show the PAPopuplist
       this.showPAPopuplist(e);
+      clearTimeout(this.PAPopupListtimer);
     }
   }
   onMouseLeave(e){
     //the PAPopupList is currently shown and we dont want to close it
     if (this.state.dataForPopup && this.state.dataForPopup.features && this.state.dataForPopup.features.length >1) return; 
-    //deselect features immediately unless the mouse is now over the PAPopup
+    //deselect features immediately 
     this.deselectFeatures();
     //close the PAPopup
     this.closePAPopup(600);
@@ -221,7 +244,8 @@ class App extends React.Component {
     //wait for a bit before closing the popup - the user may want to interact with it
     this.PAPopuptimer = setTimeout(()=>{
       if (!this.mouseOverPAPopup) this.setState({dataForPopup: undefined});
-    }, ms);            
+    }, ms);  
+    console.log(this.PAPopuptimer);
   }
   closePAPopuplist(ms){
     this.PAPopupListtimer = setTimeout(()=>{
@@ -282,22 +306,17 @@ class App extends React.Component {
       }
       //increase the opacity if the key contains the word opacity
       if (key.indexOf("opacity") !== -1) newValue = this.getNewOpacity(paint[key],increaseBy);
-      if (!((key === "fill-outline-color") && (sourceLayer === window.LYR_TO_GEOMETRY_POINT_TO_POLYGON || sourceLayer ===  window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON || sourceLayer === window.LYR_TO_GEOMETRY_SHIFTED_POLYGON))){
-        this.map.setPaintProperty(targetLayer, key, newValue);
-      //dont change the fill outline opacity for any layers that are geometry changes - their outlines are defined in separate line layers
-      console.log(targetLayer + ": " + key + " from " + paint[key] + " to " + newValue );
-      }
+      //dont change the fill outline opacity if the source layer is a changed geometry polygon - the fill outline should remain invisible as it will be shown in the geometry changed line layer
+      if (!((key === "fill-outline-color") && (sourceLayer === window.LYR_TO_GEOMETRY_POINT_TO_POLYGON || sourceLayer ===  window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON || sourceLayer === window.LYR_TO_GEOMETRY_SHIFTED_POLYGON))) this.map.setPaintProperty(targetLayer, key, newValue);
     });
-    
-    // 
   }
   getNewOpacity(value, increaseBy){
     return ((value + increaseBy)>1) ? 1 : value + increaseBy;
   }
   getPaintProperty(layerid){
-      let style = this.map.getStyle();
-      let layer = style.layers.find(layer => { return layer.id === layerid});
-      return layer.paint;
+    let style = this.map.getStyle();
+    let layer = style.layers.find(layer => { return layer.id === layerid});
+    return layer.paint;
   }
 
   showAllNoChanges(_show){
@@ -323,10 +342,12 @@ class App extends React.Component {
       this.versionChanged();
     });
   }
+  setShowChanges(value){
+    this.setState({showChanges:value},() => {
+      this.versionChanged();
+    });
+  }
   render() {
-    //clear any timers to close the PAPopup
-    clearTimeout(this.PAPopuptimer);
-    clearTimeout(this.PAPopupListtimer);
     return (
       <React.Fragment>
         <MyMap 
@@ -347,8 +368,8 @@ class App extends React.Component {
         />
         <PAPopupList dataForPopupList={this.state.dataForPopupList} country_pa_diffs={this.state.country_pa_diffs} map={this.map} showPAPopup={this.showPAPopupFromList.bind(this)} onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}/> 
         <PAPopup statuses={this.state.statuses} dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
-        <AppBar setVersion={this.setVersion.bind(this)} versions={this.state.versions} version={this.state.toVersion}/>
-        <FooterBar statuses={this.state.statuses} handleStatusChange={this.handleStatusChange.bind(this)}/>
+        <AppBar setVersion={this.setVersion.bind(this)} versions={this.state.versions} version={this.state.toVersion} setShowChanges={this.setShowChanges.bind(this)}/>
+        <FooterBar view={this.state.view} statuses={this.state.statuses} handleStatusChange={this.handleStatusChange.bind(this)}/>
       </React.Fragment>
     );
   }

@@ -36,12 +36,7 @@ class MyMap extends React.Component {
   }
   shouldComponentUpdate(nextProps, nextState) {
     // this is a crude hack to compare properties -TODO SORT THIS OUT
-    if (this.props.toVersion && this.props.toVersion.id !== nextProps.toVersion.id){
-      return true;
-      //there seems to be a bug where if the 
-    }else{
-      return (JSON.stringify(this.props) !== JSON.stringify(nextProps))||(JSON.stringify(this.state) !== JSON.stringify(nextState)); 
-    }
+    return (JSON.stringify(this.props) !== JSON.stringify(nextProps))||(JSON.stringify(this.state) !== JSON.stringify(nextState)); 
   }	
   clickCountryPopup(country){
     //set the currently selected country
@@ -54,7 +49,19 @@ class MyMap extends React.Component {
     this.map = map;
     //set a property in the App class
     this.props.setMap(map);
+    //initialise the layers
+    this.initialiseLayers();
+  }
+  //adds the dynamic layers and filters them by country
+  initialiseLayers(){
+    //add the dynamic layers
     this.addDynamicLayers();
+    //filter the to points and polygons layer - if no countries are passed then show all countries
+    if (this.iso3s.length === 0){
+      this.map.setFilter(window.LYR_TO_POLYGON, null);
+    }else{
+      this.map.setFilter(window.LYR_TO_POLYGON, ['in', 'iso3'].concat(this.iso3s));  
+    }
   }
   addDynamicLayers(){
     //add dynamic layers
@@ -90,6 +97,8 @@ class MyMap extends React.Component {
   }
   //adds an individual layer to the map
   addLayer(details){
+    //if the layer already exists then delete it
+    if (this.map.getLayer(details.id)) this.map.removeLayer(details.id);
     this.map.addLayer({
       'id': details.id,
       'type': details.type,
@@ -107,19 +116,17 @@ class MyMap extends React.Component {
     //get the from and to versions in abbreviated form to get the vector tiles
     let _from = this.props.fromVersion.abbreviated;
     let _to = this.props.toVersion.abbreviated;
-    let countryPopups, toFilter, toPointsFilter = [], addedPAs=[], removedPAs=[], changedPAs=[], geometryShiftedPAs=[], geometryPointCountChangedPAs= [], geometryPointToPolygonPAs = [], geometryChangedPAs =[];
+    let countryPopups, toPolygonsFilter, toPointsFilter = [], addedPAs=[], removedPAs=[], changedPAs=[], geometryShiftedPAs=[], geometryPointCountChangedPAs= [], geometryPointToPolygonPAs = [], geometryChangedPAs =[];
     switch (this.props.view) {
       case 'global':
         //get the country popups
-        let iso3s = [];
+        this.iso3s = [];
         countryPopups = this.props.global_summary.map(country => {
-          iso3s.push(country.iso3);
+          this.iso3s.push(country.iso3);
           return <CountryPopup country={country} key={country.iso3} showStatuses={this.props.showStatuses} clickCountryPopup={this.clickCountryPopup.bind(this)}/>;
         });
-        //filter the toLayer  to only the countries that are being shown
-        toFilter = ['in', 'iso3'].concat(iso3s);
-        //filter out all points at the global scale view
-        toPointsFilter = ['in', 'iso3',''];
+        //if the map is available then add the layers and filter them
+        if (this.map !== undefined) this.initialiseLayers();
         break;
       case 'country':
         //get the layers to show
@@ -152,7 +159,7 @@ class MyMap extends React.Component {
         //get the array of all protected areas that have changed geometries
         geometryChangedPAs = geometryShiftedPAs.concat(geometryPointCountChangedPAs).concat(geometryPointToPolygonPAs);
         //the toLayer should exclude all of the other protected areas that are changed, added or have their geometry shifted
-        toFilter = ['all', ['!in', 'wdpaid'].concat(changedPAs).concat(addedPAs).concat(geometryChangedPAs),['in', 'iso3', this.country.iso3]];
+        toPolygonsFilter = ['all', ['!in', 'wdpaid'].concat(changedPAs).concat(addedPAs).concat(geometryChangedPAs),['in', 'iso3', this.country.iso3]];
         //the toPoints layer should exclude all new point PAs (which will be shown in blue)
         toPointsFilter = ['all', ['!in', 'wdpaid'].concat(addedPAs),['in', 'iso3', this.country.iso3]];        
         //the changed layer should exclude all of the other protected areas that have had their geometry changed - these will be rendered with dashed outlines
@@ -160,7 +167,7 @@ class MyMap extends React.Component {
         //set the filters on the layers
         this.map.setFilter(window.LYR_FROM_DELETED_POLYGON,['in', 'wdpaid'].concat(removedPAs));
         this.map.setFilter(window.LYR_FROM_DELETED_POINT, ['in', 'wdpaid'].concat(removedPAs));
-        this.map.setFilter(window.LYR_TO_POLYGON, toFilter);
+        this.map.setFilter(window.LYR_TO_POLYGON, toPolygonsFilter);
         this.map.setFilter(window.LYR_TO_POINT, toPointsFilter);
         this.map.setFilter(window.LYR_TO_CHANGED_ATTRIBUTE, ['in', 'wdpaid'].concat(changedPAs));
         this.map.setFilter(window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON, ['in', 'wdpaid'].concat(geometryPointToPolygonPAs));

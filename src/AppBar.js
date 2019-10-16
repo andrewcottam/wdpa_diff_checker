@@ -5,14 +5,20 @@ import Slider from '@material-ui/core/Slider';
 class AppBar extends React.Component {
     constructor(props){
         super(props);
-        this.state = {value: 1}; //sep 2019 - the first month with change data
+        //get the selected version
+        let selectedVersion = props.versions.find(version => version.hasOwnProperty("selected")).id;
+        this.state = {value: selectedVersion, showChanges: false}; 
     }
     handleChange(event, newValue) {
         this.setState({value: newValue});
         this.props.setVersion(newValue);
     }
+    handleShowChangesChange(event) {
+        this.setState({showChanges: !this.state.showChanges});
+        this.props.setShowChanges(!this.state.showChanges);
+    }
     render() {
-        let marks = this.props.versions.map(version =>{
+        let marks = this.props.versions.map((version, index) =>{
             return {value: version.id, label: version.shortTitle};
         });
         return (
@@ -23,14 +29,20 @@ class AppBar extends React.Component {
                         <div className={'appBarContent'}>
                             {/*<div className={'fromVersion'}>{this.props.fromVersion&&this.props.fromVersion.title}</div>
                             <div className={'toVersion'}>{this.props.toVersion&&this.props.toVersion.title}</div>*/}
-                            <Slider
-                                min={marks[0].id}
-                                max={marks.length-1}
-                                value={this.state.value}
-                                onChangeCommitted={this.handleChange.bind(this)}
-                                valueLabelDisplay="off"
-                                marks={marks}
-                            />
+                            <div className={"sliderContainer"}>
+                                <Slider
+                                    min={marks[0].id}
+                                    max={marks.length-1}
+                                    value={this.state.value}
+                                    onChangeCommitted={this.handleChange.bind(this)}
+                                    valueLabelDisplay="off"
+                                    marks={marks}
+                                />
+                            </div>
+                            <div className={'showChangesDiv'}>
+                                <input className={'showChangesCheckbox'} id={"showChangesCheckbox"} type="checkbox" defaultChecked={this.state.showChanges} onChange={this.handleShowChangesChange.bind(this)}/>
+                                <label for={"showChangesCheckbox"}>Show changes</label>
+                            </div>
                         </div>
                     </div>
                 </div>

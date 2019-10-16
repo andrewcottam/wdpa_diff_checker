@@ -20,11 +20,14 @@
 }
 
 .appBarContent {
-  padding: 40px;
+  padding: 10px;
   font-size: 14px;
   background-color: white;
 }
 
+.sliderContainer{
+  margin:30px;
+}
 .fromVersion {
   display: inline;
   left: 0px;
@@ -188,4 +191,10 @@
 }
 
 .MuiSlider-root{
+}
+.MuiSlider-track {
+  display: none !important;
+}
+.showChangesDiv{
+  
 }

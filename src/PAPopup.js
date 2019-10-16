@@ -50,12 +50,12 @@ class PAPopup extends React.Component {
 				break;
 			case window.LYR_TO_NEW_POLYGON:
 			case window.LYR_TO_NEW_POINT:
-				children = <div className={'paPopupChangeType'}>This protected area was added in {this.props.toVersion.title}</div>;
+				children = <div className={'paPopupChangeType'}>Added in {this.props.toVersion.title}</div>;
 				status = "added";
 				break;
 			case window.LYR_FROM_DELETED_POLYGON:
 			case window.LYR_FROM_DELETED_POINT:
-				children = <div className={'paPopupChangeType'}>This protected area was removed in {this.props.toVersion.title}</div>;
+				children = <div className={'paPopupChangeType'}>Removed in {this.props.toVersion.title}</div>;
 				link = <span className={"ppLink"}></span>;
 				status = "removed";
 				break;
