@@ -278,14 +278,21 @@ class App extends React.Component {
       //increase the opacity in any rgba values
       if ((typeof(paint[key]) === "string") && paint[key].indexOf("rgba") !== -1){
         let rgba = parse(paint[key]);
-        newValue = "rgba(" + rgba.values[0] + "," + rgba.values[1] + "," + rgba.values[2] + "," + (rgba.alpha + increaseBy) + ")";
+        newValue = "rgba(" + rgba.values[0] + "," + rgba.values[1] + "," + rgba.values[2] + "," + this.getNewOpacity(rgba.alpha, increaseBy) + ")";
       }
       //increase the opacity if the key contains the word opacity
-      if (key.indexOf("opacity") !== -1) newValue = (paint[key] + increaseBy);
-      this.map.setPaintProperty(targetLayer, key, newValue);
+      if (key.indexOf("opacity") !== -1) newValue = this.getNewOpacity(paint[key],increaseBy);
+      if (!((key === "fill-outline-color") && (sourceLayer === window.LYR_TO_GEOMETRY_POINT_TO_POLYGON || sourceLayer ===  window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON || sourceLayer === window.LYR_TO_GEOMETRY_SHIFTED_POLYGON))){
+        this.map.setPaintProperty(targetLayer, key, newValue);
+      //dont change the fill outline opacity for any layers that are geometry changes - their outlines are defined in separate line layers
+      console.log(targetLayer + ": " + key + " from " + paint[key] + " to " + newValue );
+      }
     });
     
     // 
+  }
+  getNewOpacity(value, increaseBy){
+    return ((value + increaseBy)>1) ? 1 : value + increaseBy;
   }
   getPaintProperty(layerid){
       let style = this.map.getStyle();
@@ -314,8 +321,6 @@ class App extends React.Component {
   setVersion(version){
     this.setState({fromVersion: this.state.versions[version-1], toVersion: this.state.versions[version]},() => {
       this.versionChanged();
-      console.log(this.map.getStyle().sources.wdpa_to_polygons.tiles[0].substr(60));
-      console.log(this.map.getStyle().layers[85]["source-layer"]);
     });
   }
   render() {
