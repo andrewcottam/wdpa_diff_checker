@@ -66,27 +66,27 @@ class MyMap extends React.Component {
   addDynamicLayers(){
     //add dynamic layers
     //removed protected areas layers
-    this.addLayer({id: window.LYR_FROM_DELETED_POLYGON, sourceId: window.SRC_FROM_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_FROM_DELETED_POLYGON, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
-    this.addLayer({id: window.LYR_FROM_DELETED_POINT, sourceId: window.SRC_FROM_POINTS, type: "circle", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_points", layout: {visibility: "visible"}, paint: P_FROM_DELETED_POINT, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
+    this.addLayer({id: window.LYR_FROM_DELETED_POLYGON, sourceId: window.SRC_FROM_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_FROM_DELETED_POLYGON, filter:['==', 'wdpaid','-1']});
+    this.addLayer({id: window.LYR_FROM_DELETED_POINT, sourceId: window.SRC_FROM_POINTS, type: "circle", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_points", layout: {visibility: "visible"}, paint: P_FROM_DELETED_POINT, filter:['==', 'wdpaid','-1']});
     //no change protected areas layers
-    this.addLayer({id: window.LYR_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_POLYGON, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
-    this.addLayer({id: window.LYR_TO_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_points", layout: {visibility: "visible"}, paint: P_TO_POINT, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
+    this.addLayer({id: window.LYR_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_POLYGON, filter:['==', 'wdpaid','-1']});
+    this.addLayer({id: window.LYR_TO_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_points", layout: {visibility: "visible"}, paint: P_TO_POINT, filter:['==', 'wdpaid','-1']});
     //attribute change in protected areas layers
-    this.addLayer({id: window.LYR_TO_CHANGED_ATTRIBUTE, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_ATTRIBUTE, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
+    this.addLayer({id: window.LYR_TO_CHANGED_ATTRIBUTE, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_ATTRIBUTE, filter:['==', 'wdpaid','-1']});
     //geometry change in protected areas layers - from
     this.addLayer({id: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON, sourceId: window.SRC_FROM_POINTS, type: "circle", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_points", layout: {visibility: "visible"}, paint: P_FROM_GEOMETRY_POINT_TO_POLYGON, filter:['==', 'wdpaid','-1']});
     this.addLayer({id: window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE, sourceId: window.SRC_FROM_POLYGONS, type: "line", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE, filter:['==', 'wdpaid','-1']});
     this.addLayer({id: window.LYR_FROM_GEOMETRY_SHIFTED_LINE, sourceId: window.SRC_FROM_POLYGONS, type: "line", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_FROM_GEOMETRY_SHIFTED_LINE, filter:['==', 'wdpaid','-1']});
     //geometry change in protected areas layers - to
-    this.addLayer({id: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
+    this.addLayer({id: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY, filter:['==', 'wdpaid','-1']});
     this.addLayer({id: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY_LINE, filter:['==', 'wdpaid','-1']});
-    this.addLayer({id: window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
+    this.addLayer({id: window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY, filter:['==', 'wdpaid','-1']});
     this.addLayer({id: window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY_LINE, filter:['==', 'wdpaid','-1']});
-    this.addLayer({id: window.LYR_TO_GEOMETRY_SHIFTED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
+    this.addLayer({id: window.LYR_TO_GEOMETRY_SHIFTED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY, filter:['==', 'wdpaid','-1']});
     this.addLayer({id: window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY_LINE, filter:['==', 'wdpaid','-1']});
     //added protected areas layers
-    this.addLayer({id: window.LYR_TO_NEW_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_NEW_POLYGON, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
-    this.addLayer({id: window.LYR_TO_NEW_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_points", layout: {visibility: "visible"}, paint: P_TO_NEW_POINT, filter:['==', 'wdpaid','-1'], onMouseEnter: this.props.onMouseEnter, onMouseLeave: this.props.onMouseLeave});
+    this.addLayer({id: window.LYR_TO_NEW_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_TO_NEW_POLYGON, filter:['==', 'wdpaid','-1']});
+    this.addLayer({id: window.LYR_TO_NEW_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + this.props.toVersion.abbreviated + "_points", layout: {visibility: "visible"}, paint: P_TO_NEW_POINT, filter:['==', 'wdpaid','-1']});
     //selection layers
     this.addLayer({id: window.LYR_FROM_SELECTED_POLYGON, sourceId: window.SRC_FROM_POLYGONS, type: "fill", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_POLYGON, filter:['==', 'wdpaid','-1']});
     this.addLayer({id: window.LYR_FROM_SELECTED_LINE, sourceId: window.SRC_FROM_POLYGONS, type: "line", sourceLayer: "wdpa_" + this.props.fromVersion.abbreviated + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_LINE, filter:['==', 'wdpaid','-1']});
@@ -107,9 +107,6 @@ class MyMap extends React.Component {
       'paint': details.paint,
       'filter': details.filter
     });
-    //add any event handlers
-    if (details.hasOwnProperty("onMouseEnter")) this.map.on("mouseenter", details.id, details.onMouseEnter);
-    if (details.hasOwnProperty("onMouseLeave")) this.map.on("mouseleave", details.id, details.onMouseLeave);
   }
   render() {
     if ((this.props.toVersion === undefined)||(this.props.fromVersion === undefined)) return null;

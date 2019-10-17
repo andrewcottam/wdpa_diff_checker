@@ -49,7 +49,9 @@ class App extends React.Component {
     };
     this.mouseOverPAPopup = false;
     this.mouseOverPAPopuplist = false;
-    this.PAPopuptimer = []; //manages all of the timers that are created when the mouse leaves a feature
+    this.PAPopuptimer = []; 
+    this.PAPopupListtimer = [];
+    this.wdpaidsUnderMouse = [];
   }
   componentDidMount() {
     //get the abbreviated version data
@@ -71,14 +73,6 @@ class App extends React.Component {
     this.map.on("mousemove", this.mouseMove.bind(this));
     //set the version
     this.versionChanged();
-  }
-  mouseMove(e){
-    var features = this.map.queryRenderedFeatures(e.point,{layers: [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT]});
-    if (features.length>0) {
-      let wdpaids = features.map(feature=>{return feature.properties.wdpaid;});
-      // console.log(wdpaids.join(","));
-      // console.log(features);
-    }
   }
   versionChanged(){
     if (this.state.showChanges){
@@ -124,17 +118,18 @@ class App extends React.Component {
           return (countryData) ? Object.assign(country, countryData.properties, { "centroid": countryData.geometry.coordinates }) : null;
         });
         //filter out the nulls
-        this.global_summary_all = global_summary_all.filter((item) => item !== null);
+        this.global_summary_all = global_summary_all.filter((item) => !(item === null));
         resolve("GlobalSummaryRetrieved");
       });
     });
   }
   //returns true if the country has protected areas with the passed status
   isCountryVisible(status, country){
-    return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] !== null); 
+    return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] > 0); 
   }
   //filters the global summary for only the countries that need to be shown based on the statuses that the user wants to see
   getVisibleCountries(){
+    if (this.global_summary_all === undefined) return;
     //iterate through the countries and get only the ones that will be shown
     let global_summary = this.global_summary_all.filter((country) => {
       return (this.isCountryVisible('added', country) || this.isCountryVisible('removed', country) || this.isCountryVisible('changed', country));
@@ -159,7 +154,7 @@ class App extends React.Component {
         //the no_change status is handled differently as we dont want to retrieve all wdpaids for a country which havent changed as this is lots of data, potentially, but we can get the no_change country statistics from the global summary
         let global_summary_data = this.global_summary_all.find(item => { return item.iso3 === iso3});
         let no_change_status = _statuses.find(item => item.key === 'no_change');
-        return Object.assign(no_change_status, {present: global_summary_data.no_change !== null});
+        return Object.assign(no_change_status, {present: global_summary_data.no_change > 0});
       }
     });
     this.setState({statuses: _statuses});
@@ -194,40 +189,64 @@ class App extends React.Component {
       if (response.records.length>0) this.setState({country_pa_diffs: response.records});
     });
   }
-  //TODO: Solve why this is called multiple times when the mouse enters a feature
-  onMouseEnter(e){
-    if (this.state.view === 'global') return;
-    let wdpaids =[];
-		//remove duplicate features
-		let features = e.features.map(feature=>{
-			if (wdpaids.indexOf(feature.properties.wdpaid) === -1){
-				wdpaids.push(feature.properties.wdpaid);
-				return feature;
-			}else{
-				return null;
+  //gets the features under the cursor 
+  mouseMove(e){
+    var features = this.map.queryRenderedFeatures(e.point,{layers: [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT]});
+    if (features.length>0) {
+      //remove any duplicate features (at the boundary between vector tiles there may be duplicates so remove them)
+      features = this.removeDuplicateFeatures(features, "wdpaid");
+      //get the unique wdpaids values 
+      let wdpaids = features.map(feature => feature.properties.wdpaid);
+      //compare the wdpas with the previous features under the mouse to see if there are any differences
+      if (!this.arraysAreTheSame(wdpaids,this.wdpaidsUnderMouse)){
+        this.onMouseEnter({point: e.point, features: features});
+        this.wdpaidsUnderMouse = wdpaids;
+      }
+    }else{
+      //no features under the cursor
+      this.clearPopups();
+    }
+  }
+  //gets unique features from an array of features based on the key property
+  removeDuplicateFeatures(arr, key){
+    let uniqueValues =[], uniqueFeatures = [];
+		arr.forEach(feature=>{
+			if (uniqueValues.indexOf(feature.properties[key]) === -1){
+				uniqueFeatures.push(feature);
+				uniqueValues.push(feature.properties[key]);
 			}
 		});
-		//remove the nulls
-		features = features.filter((item) => item !== null);
-		//set the features property back on the mouseEventData
-    Object.assign(e, {features: features});
+    return uniqueFeatures;
+  }
+  //compares two arrays to see if they are the same
+  arraysAreTheSame(arr1, arr2){
+    //compare using a simple string conversion
+    return (arr1.join("") === arr2.join("")) ? true : false;
+  }
+  onMouseEnter(e){
+    if (this.state.view === 'global') return;
     //if only one feature - show the PAPopup
     if (e.features.length === 1) {
+      this.closePAPopuplist(0);
       //clear any timers to close the PAPopup
       this.PAPopuptimer.forEach(timer=>{ clearTimeout(timer)});
       this.showPAPopup(e);
     }else{ //show the PAPopuplist
+      this.closePAPopup(0);
+      //clear any timers to close the PAPopupList
+      this.PAPopupListtimer.forEach(timer=>{ clearTimeout(timer)});
       this.showPAPopuplist(e);
-      clearTimeout(this.PAPopupListtimer);
     }
   }
-  onMouseLeave(e){
+  clearPopups(){
+    //reset the local variable that has the wdpaids
+    this.wdpaidsUnderMouse = [];
     //the PAPopupList is currently shown and we dont want to close it
     if (this.state.dataForPopup && this.state.dataForPopup.features && this.state.dataForPopup.features.length >1) return; 
     //deselect features immediately 
     this.deselectFeatures();
     //close the PAPopup
-    this.closePAPopup(600);
+    this.closePAPopup(400);
   }
   showPAPopup(e){
     //highlight the feature
@@ -240,7 +259,7 @@ class App extends React.Component {
     this.setState({dataForPopupList:e});
   }
   showPAPopupFromList(feature,  e){
-    this.showPAPopup({features:[feature], point:{x: e.screenX, y: e.screenY}});
+    this.showPAPopup({features:[feature], point:{x: e.clientX + 50, y: e.clientY}});
   }
   closePAPopup(ms){
     //wait for a bit before closing the popup - the user may want to interact with it
@@ -249,9 +268,9 @@ class App extends React.Component {
     }, ms));  
   }
   closePAPopuplist(ms){
-    this.PAPopupListtimer = setTimeout(()=>{
+    this.PAPopupListtimer.push(setTimeout(()=>{
       if (!this.mouseOverPAPopuplist) this.setState({dataForPopupList: undefined});
-    }, ms);            
+    }, ms));            
   }
   onMouseEnterPAPopup(e){
     this.mouseOverPAPopup = true;
@@ -259,7 +278,7 @@ class App extends React.Component {
   onMouseLeavePAPopup(e){
     this.mouseOverPAPopup = false;
     //close the PAPopup
-    this.closePAPopup(600);
+    this.closePAPopup(0);
   }
   onMouseEnterPAPopuplist(e){
     this.mouseOverPAPopuplist = true;
@@ -362,8 +381,6 @@ class App extends React.Component {
           showStatuses={this.state.showStatuses}
           statuses={this.state.statuses}
           clickCountryPopup={this.clickCountryPopup.bind(this)}
-          onMouseEnter={this.onMouseEnter.bind(this)}
-          onMouseLeave={this.onMouseLeave.bind(this)}
           view={this.state.view}
           attribution={"IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) August, 2019, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>"}
         />

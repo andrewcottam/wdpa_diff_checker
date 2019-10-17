@@ -1,6 +1,7 @@
 import React from 'react';
 import Changed from './Changed.js';
 import Status from './Status.js';
+import { getFeatureStatus } from './genericFunctions.js';
 
 const TITLE_LINK = "Click to open the protected area in the Protected Planet website";
 const URL_PP = "https://www.protectedplanet.net/";
@@ -16,9 +17,9 @@ class PAPopup extends React.Component {
 		//get the previous version of the feature either from the points layer of the polygons layer
 		let previous_feature;
 		if (pa_data.geometry_change && pa_data.geometry_change === "point to polygon"){
-			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POINTS, {sourceLayer: "wdpa_aug_2019_points", filter: ["==", "wdpaid", props.wdpaid]})[0];
+			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POINTS, {sourceLayer: "wdpa_" + pa_data.from + "_points", filter: ["==", "wdpaid", props.wdpaid]})[0];
 		}else{
-			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POLYGONS, {sourceLayer: "wdpa_aug_2019_polygons", filter: ["==", "wdpaid", props.wdpaid]})[0];
+			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POLYGONS, {sourceLayer: "wdpa_" + pa_data.from + "_polygons", filter: ["==", "wdpaid", props.wdpaid]})[0];
 		}
 		//attributes have changed - make an array of the data
 		if (pa_data.attribute_change){
@@ -39,36 +40,27 @@ class PAPopup extends React.Component {
 		let feature = this.props.dataForPopup.features[0];
 		let children, status="", link;
 		link = <span className={"ppLink underline"}><a href={URL_PP + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpaid}</a></span>;
-		switch (feature.layer.id) {
-			case window.LYR_TO_CHANGED_ATTRIBUTE:
-			case window.LYR_TO_GEOMETRY_POINT_TO_POLYGON:
-			case window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON:
-			case window.LYR_TO_GEOMETRY_SHIFTED_POLYGON:
+		status = getFeatureStatus(feature);
+		switch (status) {
+			case "changed":
 				let changedData = this.getChangedData(feature);
-				children = <Changed statuses={this.props.statuses} changedData={changedData} fromVersion={this.props.fromVersion.abbreviated} toVersion={this.props.toVersion.abbreviated}/>;
-				status = "changed";
+				children = <Changed statuses={this.props.statuses} changedData={changedData} fromVersion={this.props.fromVersion} toVersion={this.props.toVersion}/>;
 				break;
-			case window.LYR_TO_NEW_POLYGON:
-			case window.LYR_TO_NEW_POINT:
+			case "added":
 				children = <div className={'paPopupChangeType'}>Added in {this.props.toVersion.title}</div>;
-				status = "added";
 				break;
-			case window.LYR_FROM_DELETED_POLYGON:
-			case window.LYR_FROM_DELETED_POINT:
+			case "removed":
 				children = <div className={'paPopupChangeType'}>Removed in {this.props.toVersion.title}</div>;
 				link = <span className={"ppLink"}></span>;
-				status = "removed";
 				break;
-			case window.LYR_TO_POLYGON:
-			case window.LYR_TO_POINT:
+			case "no_change":
 				children = <div className={'paPopupChangeType'}>No change</div>;
-				status = "no change";
 				break;
 			default:
 				//code
 		}
 		return (
-			<div style={{'left': left,'top':top}} id="popup" onMouseEnter={this.props.onMouseEnterPAPopup} onMouseLeave={this.props.onMouseLeavePAPopup}>
+			<div style={{'left': left,'top':top}} id="popup" className={'PAPopup'} onMouseEnter={this.props.onMouseEnterPAPopup} onMouseLeave={this.props.onMouseLeavePAPopup}>
 				<div className={'wdpaPopup'}>
 					<div className="paPopupName"><Status status={status}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
 					<div className={'paPopupContent'}>
