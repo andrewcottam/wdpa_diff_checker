@@ -1,3 +1,4 @@
+/*global URLSearchParams*/
 import React from 'react';
 import './App.css';
 import jsonp from 'jsonp-promise';
@@ -9,8 +10,9 @@ import parse from 'color-parse';
 import AppBar from './AppBar.js';
 import FooterBar from './FooterBar.js';
 
-// const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
-const REST_BASE_URL = "https://dopa-services.jrc.ec.europa.eu/services/marxan_vt/services/";
+const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
+// const REST_BASE_URL = "https://rest-services.jrc.ec.europa.eu/services/marxan_vt/services/";
+// const REST_BASE_URL = "https://dopa-services.jrc.ec.europa.eu/services/marxan_vt/services/";
 const USE_SELECTION_COLOR = false; //set to true to disable the selection using the color of the polygon - it will use the P_SELECTION_ colors in MyMap.js
 //defines which layers will be highlighted when the mouse moves over the source layer - each layer in the highlight layers will be highlighted using the paint properties from the paintPropertyFrom layer
 let hightlightRules = [
@@ -39,9 +41,9 @@ class App extends React.Component {
         {key:"added", text:"Added", short_text:"Added", present: false, visible: true, layers:[window.LYR_TO_NEW_POLYGON, window.LYR_TO_NEW_POINT]},
         {key:"removed", text:"Removed", short_text:"Removed", present: false, visible: true, layers:[window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT]},
         {key:"changed", text:"Attribute", short_text:"Attribute", present: false, visible: true, layers:[window.LYR_TO_CHANGED_ATTRIBUTE]},
-        {key:"point_to_polygon", text:"The geometry has changed from a point to a polygon", short_text:"Geometry: pt -> poly", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE]},
-        {key:"point_count_changed", text:"The geometry has been modified", short_text:"Geometry: changed", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE]},
-        {key:"geometry_shifted", text:"The geometry has moved", short_text:"Geometry: moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
+        {key:"point_to_polygon", text:"The boundary has changed from a point to a polygon", short_text:"Point to polygon", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE]},
+        {key:"point_count_changed", text:"The boundary has changed", short_text:"Boundary changed", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE]},
+        {key:"geometry_shifted", text:"The boundary has moved", short_text:"Boundary moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
         {key:"no_change", text:"No change", short_text:"No change", present: false, visible: true, layers:[window.LYR_TO_POLYGON, window.LYR_TO_POINT]},
         ], 
       versions:  [{id:0, title: "August 2019"},{id:1, title: "September 2019", selected: true},{id:2, title:"October 2019"}],
@@ -58,32 +60,50 @@ class App extends React.Component {
     let _versions = this.state.versions.map(version => {
       return Object.assign(version, {abbreviated: version.title.toLowerCase().substr(0,3) + "_" + version.title.slice(-4), shortTitle: version.title.substr(0,3) + " " + version.title.slice(-2)});
     });
+    //get the selected version
     let selectedVersion = _versions.find(version => version.hasOwnProperty("selected")).id;
     this.setState({versions: _versions}, () => {
       //set the version
-      this.setState({fromVersion: this.state.versions[selectedVersion-1], toVersion: this.state.versions[selectedVersion]},() => {
-        this.versionChanged();
-      });
+      this.setState({toVersion: this.state.versions[selectedVersion]});
     });
   }
-  //get a pointer to the mapbox gl map
-  setMap(map){
+  //the mapbox gl map is ready
+  mapReady(map){
     this.map = map;
     //add event handlers to the map
     this.map.on("mousemove", this.mouseMove.bind(this));
-    //set the version
-    this.versionChanged();
+    //get the query parameters
+    var searchParams = new URLSearchParams(window.location.search);
+    //if an iso3 code is passed then set this as a local property - when the global summary has loaded if this is set then the map will zoom to that country
+    if (searchParams.has("iso3")) {
+      this.iso3 = searchParams.get("iso3");
+      this.setState({showChanges:true});
+    }
+    //map the layers
+    this.updateMappedLayers();
   }
-  versionChanged(){
+  updateMappedLayers(){
     if (this.state.showChanges){
       //get the global diff summary
       this.getGlobalSummary().then(() => {
+        //see if an iso3 parameter was passed in the query string
+        if (this.iso3) {
+          let country = this.global_summary_all.find(country => {
+            return country.iso3 === this.iso3;
+            });
+          this.setCountry(country);
+          this.iso3 = undefined;
+        }
         //filter the countries for those that have diff data
         this.getVisibleCountries();
       });
-    }else{
-      //change the vector tiles and map them
-      if (this.map) this.hideChanges();
+    }else{ //not showing changes
+      if (this.state.view === "country"){
+        
+      }else{
+        //change the vector tiles and map them
+        this.hideChanges();
+      }
     }
   }
   hideChanges(){
@@ -172,12 +192,16 @@ class App extends React.Component {
   }
   //fired when the user clicks on a country popup
   clickCountryPopup(country) {
+    //set the country
+    this.setCountry(country);
+  }
+  setCountry(country){
     //set the bounds of the map
     this.map.fitBounds([[country.west, country.south],[country.east,country.north]],{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
     //hide the country popups
     this.hideCountryPopups();
     //set the view type
-    this.setState({view: "country"});
+    this.setState({view: "country", country: country});
     //get the country diff summary
     this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
       //set the visibility of the statuses in the statuses array
@@ -191,7 +215,8 @@ class App extends React.Component {
   }
   //gets the features under the cursor 
   mouseMove(e){
-    var features = this.map.queryRenderedFeatures(e.point,{layers: [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT]});
+    let queryLayers = (this.state.fromVersion) ? [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT] : [window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT];
+    var features = this.map.queryRenderedFeatures(e.point,{layers: queryLayers});
     if (features.length>0) {
       //remove any duplicate features (at the boundary between vector tiles there may be duplicates so remove them)
       features = this.removeDuplicateFeatures(features, "wdpaid");
@@ -303,9 +328,9 @@ class App extends React.Component {
   }
   //deselects all features 
   deselectFeatures(){
-    this.map.setFilter(window.LYR_FROM_SELECTED_POINT, ['==','wdpaid', '-1']);              
-    this.map.setFilter(window.LYR_FROM_SELECTED_LINE, ['==','wdpaid', '-1']);              
-    this.map.setFilter(window.LYR_FROM_SELECTED_POLYGON, ['==','wdpaid', '-1']);              
+    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POINT, ['==','wdpaid', '-1']);              
+    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_LINE, ['==','wdpaid', '-1']);              
+    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POLYGON, ['==','wdpaid', '-1']);              
     this.map.setFilter(window.LYR_TO_SELECTED_POINT, ['==','wdpaid', '-1']);              
     this.map.setFilter(window.LYR_TO_SELECTED_LINE, ['==','wdpaid', '-1']);              
     this.map.setFilter(window.LYR_TO_SELECTED_POLYGON, ['==','wdpaid', '-1']);
@@ -358,13 +383,13 @@ class App extends React.Component {
     });
   }
   setVersion(version){
-    this.setState({fromVersion: this.state.versions[version-1], toVersion: this.state.versions[version]},() => {
-      this.versionChanged();
+    this.setState({fromVersion: (this.state.showChanges) ? this.state.versions[version-1] : undefined, toVersion: this.state.versions[version]},() => {
+      this.updateMappedLayers();
     });
   }
   setShowChanges(value){
     this.setState({showChanges:value},() => {
-      this.versionChanged();
+      this.setVersion(this.state.toVersion.id);
     });
   }
   render() {
@@ -377,7 +402,8 @@ class App extends React.Component {
           country_summary={this.state.country_summary}
           hideCountryPopups={this.hideCountryPopups.bind(this)}
           showCountryPopups={this.showCountryPopups.bind(this)}
-          setMap={this.setMap.bind(this)}
+          country={this.state.country}
+          setMap={this.mapReady.bind(this)}
           showStatuses={this.state.showStatuses}
           statuses={this.state.statuses}
           clickCountryPopup={this.clickCountryPopup.bind(this)}
@@ -386,7 +412,7 @@ class App extends React.Component {
         />
         <PAPopupList dataForPopupList={this.state.dataForPopupList} country_pa_diffs={this.state.country_pa_diffs} map={this.map} showPAPopup={this.showPAPopupFromList.bind(this)} onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}/> 
         <PAPopup statuses={this.state.statuses} dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
-        <AppBar setVersion={this.setVersion.bind(this)} versions={this.state.versions} version={this.state.toVersion} setShowChanges={this.setShowChanges.bind(this)}/>
+        <AppBar setVersion={this.setVersion.bind(this)} versions={this.state.versions} version={this.state.toVersion} setShowChanges={this.setShowChanges.bind(this)} showChanges={this.state.showChanges}/>
         <FooterBar view={this.state.view} statuses={this.state.statuses} handleStatusChange={this.handleStatusChange.bind(this)}/>
       </React.Fragment>
     );

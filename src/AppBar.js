@@ -7,15 +7,14 @@ class AppBar extends React.Component {
         super(props);
         //get the selected version
         let selectedVersion = props.versions.find(version => version.hasOwnProperty("selected")).id;
-        this.state = {value: selectedVersion, showChanges: false}; 
+        this.state = {value: selectedVersion}; 
     }
     handleChange(event, newValue) {
         this.setState({value: newValue});
         this.props.setVersion(newValue);
     }
     handleShowChangesChange(event) {
-        this.setState({showChanges: !this.state.showChanges});
-        this.props.setShowChanges(!this.state.showChanges);
+        this.props.setShowChanges(!this.props.showChanges);
     }
     render() {
         let marks = this.props.versions.map((version, index) =>{
@@ -40,7 +39,7 @@ class AppBar extends React.Component {
                                 />
                             </div>
                             <div className={'showChangesDiv'}>
-                                <input className={'showChangesCheckbox'} id={"showChangesCheckbox"} type="checkbox" defaultChecked={this.state.showChanges} onChange={this.handleShowChangesChange.bind(this)}/>
+                                <input className={'showChangesCheckbox'} id={"showChangesCheckbox"} type="checkbox" onChange={this.handleShowChangesChange.bind(this)} checked={this.props.showChanges}/>
                                 <label for={"showChangesCheckbox"}>Show changes</label>
                             </div>
                         </div>
