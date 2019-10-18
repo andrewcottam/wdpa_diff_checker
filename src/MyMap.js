@@ -1,4 +1,3 @@
-/*global mapboxgl*/
 import React from 'react';
 import CountryPopup from './CountryPopup.js';
 import mapboxgl from 'mapbox-gl';
@@ -32,31 +31,44 @@ class MyMap extends React.Component {
     };
   }
   componentDidMount(){
+    //instantiate the map
     mapboxgl.accessToken = 'pk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiMEZrNzFqRSJ9.0QBRA2HxTb8YHErUFRMPZg';
     this.map = new mapboxgl.Map({
-      container: window.document.getElementById('map'),
+      container: 'map',
       style: window.MAP_STYLE_DEFAULT,
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
-      onMoveStart: this.props.hideCountryPopups,
-      onMoveEnd: this.props.showCountryPopups,
-      onStyleLoad: this.styleLoaded.bind(this)
     });
+    //set a property in the App class
+    this.props.setMap(this.map);
+    this.map.on("styledata", this.styleLoaded.bind(this));
+    this.map.on("movestart", this.hideCountryPopups);
+    this.map.on("moveend", this.showCountryPopups);
   }
-  shouldComponentUpdate(nextProps, nextState) {
-    // this is a crude hack to compare properties -TODO SORT THIS OUT
-    return (JSON.stringify(this.props) !== JSON.stringify(nextProps))||(JSON.stringify(this.state) !== JSON.stringify(nextState)); 
-  }	
   clickCountryPopup(country){
     //set the currently selected country
     this.props.clickCountryPopup(country);
   }
   //called when the maps style has loaded
   styleLoaded(map){
-    //set a property in the App class
-    this.props.setMap(map);
+    //add the sources
+    let _from = (this.props.fromVersion === undefined) ? undefined : this.props.fromVersion.abbreviated;
+    let _to = this.props.toVersion.abbreviated;
+    this.addRemoveSource({id: window.SRC_FROM_POLYGONS, tileJsonSource: {type: "vector", attribution: this.props.attribution, tiles: [ TILES_PREFIX + "wdpa_" + _from + "_polygons" + TILES_SUFFIX]}}, false);
+    this.addRemoveSource({id: window.SRC_FROM_POINTS, tileJsonSource: {type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _from + "_points" + TILES_SUFFIX]}}, false);
     //initialise the layers
     this.initialiseLayers();
+  }
+  addRemoveSource(details, remove){
+    //if the layer already exists then delete it
+    if (this.map.getSource(details.id)) this.map.removeSource(details.id);
+    if (!(remove)){
+      console.log("Adding source: " + details.id);
+      this.map.addSource({
+        'id': details.id,
+        'tileJsonSource': details.tileJsonSource,
+      });
+    }
   }
   //adds the dynamic layers and filters them by country
   initialiseLayers(){
@@ -117,17 +129,6 @@ class MyMap extends React.Component {
         'source-layer': details.sourceLayer,
         'paint': details.paint,
         'filter': details.filter
-      });
-    }
-  }
-  addRemoveSource(details, remove){
-    //if the layer already exists then delete it
-    if (this.map.getSource(details.id)) this.map.removeSource(details.id);
-    if (!(remove)){
-      console.log("Adding source: " + details.id);
-      this.map.addSource({
-        'id': details.id,
-        'tileJsonSource': details.tileJsonSource,
       });
     }
   }
