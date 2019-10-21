@@ -39,7 +39,7 @@ class AppBar extends React.Component {
                                 />
                             </div>
                             <div className={'showChangesDiv'}>
-                                <input className={'showChangesCheckbox'} id={"showChangesCheckbox"} type="checkbox" onChange={this.handleShowChangesChange.bind(this)} checked={this.props.showChanges}/>
+                                <input className={'showChangesCheckbox'} id={"showChangesCheckbox"} type="checkbox" onChange={this.handleShowChangesChange.bind(this)} checked={this.props.showChanges} disabled={this.state.value === 0}/>
                                 <label for={"showChangesCheckbox"}>Show changes</label>
                             </div>
                         </div>

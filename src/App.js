@@ -109,9 +109,6 @@ class App extends React.Component {
   hideChanges(){
     this.setState({global_summary: []});  
   }
-  getAbbreviatedVersion(fullVersion){
-    return fullVersion.toLowerCase().substr(0,3) + "_" + fullVersion.slice(-4);
-  }
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   _get(url, params) {
     return new Promise((resolve, reject) => {
@@ -156,6 +153,11 @@ class App extends React.Component {
     });
     //set the state - this creates the country popups on the map
     this.setState({global_summary: global_summary});
+    //log how many features have been rendered
+    // let allFeatures = this.map.queryRenderedFeatures(this.map.getBounds());
+    // console.log("All features: " + allFeatures.length);
+    // let wdpaids = this.removeDuplicateFeatures(allFeatures, "wdpaid");
+    // console.log("Unique wdpaids: " + wdpaids.length);
   }
   showCountryPopups() {
     if (this.state.view === 'global') this.getVisibleCountries();
@@ -215,7 +217,8 @@ class App extends React.Component {
   }
   //gets the features under the cursor 
   mouseMove(e){
-    let queryLayers = (this.state.fromVersion) ? [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT] : [window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT];
+    if ((this.map === undefined) || (this.map && !this.map.isStyleLoaded()) || (this.map && this.map.getLayer(window.LYR_TO_POLYGON) === undefined)) return;
+    let queryLayers = (this.state.fromVersion) ? [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT] : [window.LYR_TO_POLYGON, window.LYR_TO_POINT];
     var features = this.map.queryRenderedFeatures(e.point,{layers: queryLayers});
     if (features.length>0) {
       //remove any duplicate features (at the boundary between vector tiles there may be duplicates so remove them)
@@ -271,7 +274,7 @@ class App extends React.Component {
     //deselect features immediately 
     this.deselectFeatures();
     //close the PAPopup
-    this.closePAPopup(400);
+    if (this.state.dataForPopup!== undefined) this.closePAPopup(400);
   }
   showPAPopup(e){
     //highlight the feature
@@ -328,6 +331,7 @@ class App extends React.Component {
   }
   //deselects all features 
   deselectFeatures(){
+    if ((this.map === undefined) || (this.map && !this.map.isStyleLoaded())) return;
     if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POINT, ['==','wdpaid', '-1']);              
     if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_LINE, ['==','wdpaid', '-1']);              
     if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POLYGON, ['==','wdpaid', '-1']);              
@@ -366,7 +370,7 @@ class App extends React.Component {
 
   showAllNoChanges(_show){
     let statuses = (_show) ? ['added','removed','changed'] : [];
-    this.showChanges(statuses);
+    this._showChanges(statuses);
   }
   showChangesWithStatus(status, _show){
     let statuses = this.state.showStatuses;
@@ -375,9 +379,9 @@ class App extends React.Component {
     }else{
       statuses.pop(status);
     }
-    this.showChanges(statuses);
+    this._showChanges(statuses);
   }
-  showChanges(statuses){
+  _showChanges(statuses){
     this.setState({showStatuses: statuses},() =>{
       this.getVisibleCountries();  
     });
@@ -388,6 +392,10 @@ class App extends React.Component {
     });
   }
   setShowChanges(value){
+    //get the global changes
+    this._get(REST_BASE_URL + "get_wdpa_diff_global_changes?version=" + this.state.toVersion.id + "&format=json").then(response => {
+      this.setState({country_summary: response.records});      
+    });    
     this.setState({showChanges:value},() => {
       this.setVersion(this.state.toVersion.id);
     });
