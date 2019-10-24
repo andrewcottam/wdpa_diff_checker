@@ -9,6 +9,7 @@ import PAPopupList from './PAPopupList.js';
 import parse from 'color-parse';
 import AppBar from './AppBar.js';
 import FooterBar from './FooterBar.js';
+import dateFormat from 'dateformat';
 
 const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
 // const REST_BASE_URL = "https://rest-services.jrc.ec.europa.eu/services/marxan_vt/services/";
@@ -46,68 +47,82 @@ class App extends React.Component {
         {key:"geometry_shifted", text:"The boundary has moved", short_text:"Boundary moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
         {key:"no_change", text:"No change", short_text:"No change", present: false, visible: true, layers:[window.LYR_TO_POLYGON, window.LYR_TO_POINT]},
         ], 
-      versions:  [{id:0, title: "August 2019"},{id:1, title: "September 2019", selected: true},{id:2, title:"October 2019"}],
-      showChanges: false
+        versions: [],
+        fromVersion: undefined,
+        toVersion: undefined,
+      sliderValues: [0,1]
     };
+    this.ctrlDown = false;
     this.mouseOverPAPopup = false;
     this.mouseOverPAPopuplist = false;
     this.PAPopuptimer = []; 
     this.PAPopupListtimer = [];
     this.wdpaidsUnderMouse = [];
   }
-  componentDidMount() {
-    //get the abbreviated version data
-    let _versions = this.state.versions.map(version => {
-      return Object.assign(version, {abbreviated: version.title.toLowerCase().substr(0,3) + "_" + version.title.slice(-4), shortTitle: version.title.substr(0,3) + " " + version.title.slice(-2)});
+  //gets all the available versions of the WDPA
+  getVersions(){
+    //set the first date of the available data as 01/08/2019
+    let d = new Date(2019,7,1);
+    let today = new Date();
+    let dateArray = [];
+    //iterate through the months until the date is greater than today
+    do{
+      dateArray.push(new Date(d.getTime())); //clone the date
+      d = new Date(d.setMonth(d.getMonth()+1));
+    }
+    while (d < today);
+    //get the months and years between d1 and d2 (inclusive)
+    let versions = dateArray.map((_date, index) => {
+      return {id: index + 1, title: dateFormat(_date, "mmmm yyyy"), shortTitle: dateFormat(_date, "mmm yy"), abbreviated: dateFormat(_date, "mmm_yyyy").toLowerCase()};
     });
-    //get the selected version
-    let selectedVersion = _versions.find(version => version.hasOwnProperty("selected")).id;
-    this.setState({versions: _versions}, () => {
-      //set the version
-      this.setState({toVersion: this.state.versions[selectedVersion]});
-    });
+    this.setState({versions: versions, toVersion: versions[versions.length-1], sliderValues:[versions.length, versions.length]});
+  }
+  componentDidMount(){
+    this.getVersions();
+    this.keyDownEventListener = this.handleKeyDown.bind(this);
+    document.addEventListener("keydown", this.keyDownEventListener);
+    this.keyUpEventListener = this.handleKeyUp.bind(this);
+    document.addEventListener("keyup", this.keyUpEventListener);
+  }
+  componentWillUnmount(){
+    document.removeEventListener("keydown", this.keyDownEventListener);
+    document.removeEventListener("keyup", this.keyUpEventListener);
+  }
+  handleKeyDown(e){
+    //if the CTRL key is pressed then ctrlDown property
+    if ((e.keyCode === 17) && (!(this.ctrlDown))) this.ctrlDown = true;
+  }
+  handleKeyUp(e){
+    this.ctrlDown = false;
   }
   //the mapbox gl map is ready
   mapReady(map){
     this.map = map;
     //add event handlers to the map
     this.map.on("mousemove", this.mouseMove.bind(this));
-    //get the query parameters
-    var searchParams = new URLSearchParams(window.location.search);
-    //if an iso3 code is passed then set this as a local property - when the global summary has loaded if this is set then the map will zoom to that country
-    if (searchParams.has("iso3")) {
-      this.iso3 = searchParams.get("iso3");
-      this.setState({showChanges:true});
-    }
-    //map the layers
-    this.updateMappedLayers();
   }
   updateMappedLayers(){
-    if (this.state.showChanges){
-      //get the global diff summary
-      this.getGlobalSummary().then(() => {
-        //see if an iso3 parameter was passed in the query string
-        if (this.iso3) {
-          let country = this.global_summary_all.find(country => {
-            return country.iso3 === this.iso3;
-            });
-          this.setCountry(country);
-          this.iso3 = undefined;
-        }
-        //filter the countries for those that have diff data
-        this.getVisibleCountries();
-      });
-    }else{ //not showing changes
-      if (this.state.view === "country"){
-        
-      }else{
-        //change the vector tiles and map them
-        this.hideChanges();
+    //get the global diff summary
+    this.getGlobalSummary().then(() => {
+      //see if an iso3 parameter was passed in the query string
+      if (this.iso3) {
+        let country = this.global_summary_all.find(country => {
+          return country.iso3 === this.iso3;
+          });
+        this.setCountry(country);
+        this.iso3 = undefined;
       }
-    }
+      //filter the countries for those that have diff data
+      this.getVisibleCountries();
+    });
   }
-  hideChanges(){
-    this.setState({global_summary: []});  
+  mapStyleLoaded(){
+    if (this.state.global_summary) this.getVisibleCountries();
+    this.initialBounds = this.map.getBounds();
+  }
+  zoomOutMap(){
+    this.map.fitBounds(this.initialBounds,{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
+    this.showCountryPopups();
   }
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   _get(url, params) {
@@ -160,10 +175,7 @@ class App extends React.Component {
     // console.log("Unique wdpaids: " + wdpaids.length);
   }
   showCountryPopups() {
-    if (this.state.view === 'global') this.getVisibleCountries();
-  }
-  hideCountryPopups() {
-    if (this.state.view === 'global') this.setState({ global_summary:[] });
+    this.getVisibleCountries();
   }
   //iterates through the country summary data and sets a flag in the status array if they are visible
   setStatusPresence(records, iso3){
@@ -200,10 +212,8 @@ class App extends React.Component {
   setCountry(country){
     //set the bounds of the map
     this.map.fitBounds([[country.west, country.south],[country.east,country.north]],{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
-    //hide the country popups
-    this.hideCountryPopups();
-    //set the view type
-    this.setState({view: "country", country: country});
+    //hide the country popups and set the view type
+    this.setState({global_summary:[], view: "country", country: country, fromVersion: this.state.versions[this.state.toVersion.id-1]});
     //get the country diff summary
     this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
       //set the visibility of the statuses in the statuses array
@@ -387,18 +397,35 @@ class App extends React.Component {
     });
   }
   setVersion(version){
-    this.setState({fromVersion: (this.state.showChanges) ? this.state.versions[version-1] : undefined, toVersion: this.state.versions[version]},() => {
+    this.setState({fromVersion:  this.state.versions[version-1] , toVersion: this.state.versions[version]},() => {
       this.updateMappedLayers();
     });
   }
-  setShowChanges(value){
-    //get the global changes
-    this._get(REST_BASE_URL + "get_wdpa_diff_global_changes?version=" + this.state.toVersion.id + "&format=json").then(response => {
-      this.setState({country_summary: response.records});      
-    });    
-    this.setState({showChanges:value},() => {
-      this.setVersion(this.state.toVersion.id);
-    });
+  //slider events
+  onBeforeChange(values){
+    this.startMin = values[0];
+    this.startMax = values[1];
+    this.startDiff = values[1] - values[0];
+  }
+  onChange(values, marks){
+    let vals = Object.keys(marks);
+    if (this.ctrlDown) {
+        //see if we are going up or down
+        if ((values[0] < this.startMin) || (values[1] < this.startMax)) { 
+            if(values[0] -this.startDiff < Number(vals[0])) return;
+            this.newMin = values[0] - this.startDiff;
+            this.newMax = values[0];
+        }else{ //going up
+            if(values[1] > Number(vals[vals.length - 1])) return;
+            this.newMin = values[1] - this.startDiff;
+            this.newMax = values[1];
+        }
+        this.setState({sliderValues: [this.newMin, this.newMax]});
+        this.startMin = this.newMin;
+        this.startMax = this.newMax;
+    }else{
+        this.setState({sliderValues: values});
+    }
   }
   render() {
     return (
@@ -408,10 +435,10 @@ class App extends React.Component {
           toVersion={this.state.toVersion}
           global_summary={this.state.global_summary}
           country_summary={this.state.country_summary}
-          hideCountryPopups={this.hideCountryPopups.bind(this)}
           showCountryPopups={this.showCountryPopups.bind(this)}
           country={this.state.country}
           setMap={this.mapReady.bind(this)}
+          mapStyleLoaded={this.mapStyleLoaded.bind(this)}
           showStatuses={this.state.showStatuses}
           statuses={this.state.statuses}
           clickCountryPopup={this.clickCountryPopup.bind(this)}
@@ -420,7 +447,7 @@ class App extends React.Component {
         />
         <PAPopupList dataForPopupList={this.state.dataForPopupList} country_pa_diffs={this.state.country_pa_diffs} map={this.map} showPAPopup={this.showPAPopupFromList.bind(this)} onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}/> 
         <PAPopup statuses={this.state.statuses} dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
-        <AppBar setVersion={this.setVersion.bind(this)} versions={this.state.versions} version={this.state.toVersion} setShowChanges={this.setShowChanges.bind(this)} showChanges={this.state.showChanges}/>
+        <AppBar versions={this.state.versions} onBeforeChange={this.onBeforeChange.bind(this)} onChange={this.onChange.bind(this)} values={this.state.sliderValues} zoomOutMap={this.zoomOutMap.bind(this)}/>
         <FooterBar view={this.state.view} statuses={this.state.statuses} handleStatusChange={this.handleStatusChange.bind(this)}/>
       </React.Fragment>
     );

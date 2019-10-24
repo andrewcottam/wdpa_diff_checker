@@ -10,9 +10,10 @@ const INITIAL_FILTER = ['==', 'wdpaid','-1'];
 const TILES_PREFIX = "https://geospatial.jrc.ec.europa.eu/geoserver/gwc/service/wmts?layer=marxan:";
 const TILES_SUFFIX = "&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}";
 //paint properties
+const CIRCLE_RADIUS_STOPS = {"stops": [[5, 1],[10, 5], [15, 8]]};
 const P_TO_CHANGED_GEOMETRY = { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(0,0,0,0)"};
 const P_TO_CHANGED_GEOMETRY_LINE = { "line-color": "rgb(99,148,69)", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [3,3]};
-const P_SELECTED_POINT = {"circle-radius": 5, "circle-color": "rgb(0,0,0)", "circle-opacity": 0};
+const P_SELECTED_POINT = {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(0,0,0)", "circle-opacity": 0};
 const P_SELECTED_LINE = { "line-color": "rgb(0,0,0)", "line-width": 2, "line-opacity": 0};
 const P_SELECTED_POLYGON = { "fill-color": "rgba(0,0,0,0)", "fill-outline-color": "rgba(255,0,0,0)"};
 
@@ -62,6 +63,7 @@ class MyMap extends React.Component {
         this.unfilterNoChangeLayers();
       }
     }
+    if (this.props.country_summary!==prevProps.country_summary) this.filterCountryLayers();
     //see if the global summary has changed - if so create the country popups
     if (this.props.global_summary !== prevProps.global_summary) {
       //clear the existing popups
@@ -80,6 +82,7 @@ class MyMap extends React.Component {
     this.mapLoadedEvent = undefined;
     //add the to sources and layers
     this.addToLayers();
+    this.props.mapStyleLoaded();
   }
   //adds the sources and layers for the from version
   addFromLayers(){
@@ -90,9 +93,9 @@ class MyMap extends React.Component {
     this.addSource({id: window.SRC_FROM_POINTS, source: {type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _from + "_points" + TILES_SUFFIX]}});
     //add the layers
     this.addLayer({id: window.LYR_FROM_DELETED_POLYGON, sourceId: window.SRC_FROM_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _from + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(255,0,0, 0.2)", "fill-outline-color": "rgba(255,0,0,0.5)"}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_POLYGON});
-    this.addLayer({id: window.LYR_FROM_DELETED_POINT, sourceId: window.SRC_FROM_POINTS, type: "circle", sourceLayer: "wdpa_" + _from + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": 5, "circle-color": "rgb(255,0,0)", "circle-opacity": 0.6}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_POLYGON});
+    this.addLayer({id: window.LYR_FROM_DELETED_POINT, sourceId: window.SRC_FROM_POINTS, type: "circle", sourceLayer: "wdpa_" + _from + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(255,0,0)", "circle-opacity": 0.6}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_POLYGON});
     //geometry change in protected areas layers - from
-    this.addLayer({id: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON, sourceId: window.SRC_FROM_POINTS, type: "circle", sourceLayer: "wdpa_" + _from + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": 3, "circle-color": "rgb(255,0,0)", "circle-opacity": 0.5}, filter:INITIAL_FILTER, beforeId: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON});
+    this.addLayer({id: window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON, sourceId: window.SRC_FROM_POINTS, type: "circle", sourceLayer: "wdpa_" + _from + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(255,0,0)", "circle-opacity": 0.5}, filter:INITIAL_FILTER, beforeId: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON});
     this.addLayer({id: window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE, sourceId: window.SRC_FROM_POLYGONS, type: "line", sourceLayer: "wdpa_" + _from + "_polygons", layout: {visibility: "visible"}, paint: { "line-color": "rgb(255,0,0)", "line-width": 1, "line-opacity": 0.5, "line-dasharray": [3,3]}, filter:INITIAL_FILTER, beforeId: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON});
     this.addLayer({id: window.LYR_FROM_GEOMETRY_SHIFTED_LINE, sourceId: window.SRC_FROM_POLYGONS, type: "line", sourceLayer: "wdpa_" + _from + "_polygons", layout: {visibility: "visible"}, paint: { "line-color": "rgb(255,0,0)", "line-width": 1, "line-opacity": 0.5, "line-dasharray": [3,3]}, filter:INITIAL_FILTER, beforeId: window.LYR_TO_GEOMETRY_POINT_TO_POLYGON});
     //selection layers
@@ -115,7 +118,7 @@ class MyMap extends React.Component {
     this.addSource({id: window.SRC_TO_POINTS, source: {type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _to + "_points" + TILES_SUFFIX]}});
     //no change protected areas layers
     this.addLayer({id: window.LYR_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(99,148,69,0.3)"}, beforeID: window.LYR_TO_SELECTED_POLYGON});
-    this.addLayer({id: window.LYR_TO_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": 5, "circle-color": "rgb(99,148,69)", "circle-opacity": 0.6}, beforeID: window.LYR_TO_SELECTED_POLYGON});
+    this.addLayer({id: window.LYR_TO_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(99,148,69)", "circle-opacity": 0.6}, beforeID: window.LYR_TO_SELECTED_POLYGON});
     //selection layers
     this.addLayer({id: window.LYR_TO_SELECTED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_POLYGON, filter:INITIAL_FILTER});
     this.addLayer({id: window.LYR_TO_SELECTED_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_LINE, filter:INITIAL_FILTER});
@@ -136,7 +139,7 @@ class MyMap extends React.Component {
     this.addLayer({id: window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_TO_CHANGED_GEOMETRY_LINE, filter:INITIAL_FILTER, beforeID: window.LYR_TO_SELECTED_POLYGON});
     //added protected areas layers
     this.addLayer({id: window.LYR_TO_NEW_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(63,127,191,0.2)", "fill-outline-color": "rgba(63,127,191,0.6)"}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_SELECTED_POLYGON});
-    this.addLayer({id: window.LYR_TO_NEW_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": 10, "circle-color": "rgb(63,127,191)", "circle-opacity": 0.6}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_SELECTED_POLYGON});
+    this.addLayer({id: window.LYR_TO_NEW_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(63,127,191)", "circle-opacity": 0.6}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_SELECTED_POLYGON});
     
   }
   //removes the change layers in the to version
@@ -207,6 +210,7 @@ class MyMap extends React.Component {
     this.popups.forEach(popup => popup.remove());
   }
   filterCountryLayers(){
+    console.log("MyMap filterCountryLayers")
     let toPolygonsFilter, toPointsFilter = [], addedPAs=[], removedPAs=[], changedPAs=[], geometryShiftedPAs=[], geometryPointCountChangedPAs= [], geometryPointToPolygonPAs = [], geometryChangedPAs =[];
     if (this.props.fromVersion){
       //get the stats data for the country
@@ -237,9 +241,9 @@ class MyMap extends React.Component {
       //get the array of all protected areas that have changed geometries
       geometryChangedPAs = geometryShiftedPAs.concat(geometryPointCountChangedPAs).concat(geometryPointToPolygonPAs);
       //the toLayer should exclude all of the other protected areas that are changed, added or have their geometry shifted
-      toPolygonsFilter = ['!in', 'wdpaid'].concat(changedPAs).concat(addedPAs).concat(geometryChangedPAs);
+      toPolygonsFilter = ['all',['!in', 'wdpaid'].concat(changedPAs).concat(addedPAs).concat(geometryChangedPAs),['in', 'iso3', this.props.country.iso3]];
       //the toPoints layer should exclude all new point PAs (which will be shown in blue)
-      toPointsFilter = ['!in', 'wdpaid'].concat(addedPAs);        
+      toPointsFilter = ['all',['!in', 'wdpaid'].concat(addedPAs),['in', 'iso3', this.props.country.iso3]];        
       //the changed layer should exclude all of the other protected areas that have had their geometry changed - these will be rendered with dashed outlines
       changedPAs = changedPAs.filter(item => !geometryChangedPAs.includes(item));
       //set the filters on the individual layers
@@ -264,7 +268,7 @@ class MyMap extends React.Component {
     }    
   }
   render() {
-    if (this.props.country_summary) this.filterCountryLayers();
+    console.log("MyMap rendering")
     return (
       <div id='map' className={'map'}></div>
     );
