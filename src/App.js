@@ -75,16 +75,27 @@ class App extends React.Component {
     let versions = dateArray.map((_date, index) => {
       return {id: index + 1, title: dateFormat(_date, "mmmm yyyy"), shortTitle: dateFormat(_date, "mmm yy"), abbreviated: dateFormat(_date, "mmm_yyyy").toLowerCase()};
     });
-    this.setState({versions: versions, toVersion: versions[versions.length-1], sliderValues:[versions.length, versions.length]});
+    this.setState({versions: versions, sliderValues:[versions.length, versions.length]}, () => {
+      this.setFromToVersions(undefined, versions.length);  
+    });
+    
+  }
+  //sets the versions
+  setFromToVersions(_from, _to){
+    let f = (_from === undefined) ? undefined : this.state.versions[_from-1];
+    this.setState({fromVersion: f , toVersion: this.state.versions[_to-1]});
   }
   componentDidMount(){
+    //get the wdpa versions
     this.getVersions();
+    //add listeners for the keys to control dragging the slider
     this.keyDownEventListener = this.handleKeyDown.bind(this);
     document.addEventListener("keydown", this.keyDownEventListener);
     this.keyUpEventListener = this.handleKeyUp.bind(this);
     document.addEventListener("keyup", this.keyUpEventListener);
   }
   componentWillUnmount(){
+    //remove event listeners
     document.removeEventListener("keydown", this.keyDownEventListener);
     document.removeEventListener("keyup", this.keyUpEventListener);
   }
@@ -420,12 +431,18 @@ class App extends React.Component {
             this.newMin = values[1] - this.startDiff;
             this.newMax = values[1];
         }
-        this.setState({sliderValues: [this.newMin, this.newMax]});
+        this.setSliderValues([this.newMin, this.newMax]);
         this.startMin = this.newMin;
         this.startMax = this.newMax;
     }else{
-        this.setState({sliderValues: values});
+        this.setSliderValues(values);
     }
+  }
+  setSliderValues(values){
+    //set the slider values
+    this.setState({sliderValues: values});
+    //set the from and to versions
+    this.setFromToVersions(values[0], values[1]);
   }
   render() {
     return (
