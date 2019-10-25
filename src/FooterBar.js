@@ -11,7 +11,7 @@ class FooterBar extends React.Component {
         });
         return (
             <React.Fragment>
-                <div className={'footerBar'} style={{display: (this.props.view === 'country') ? 'flex' : 'none'}}>
+                <div className={'footerBar'} style={{display: ((this.props.view === 'country') && (this.props.values[0] !== this.props.values[1])) ? 'flex' : 'none' }}>
                     <div className={'footerBarTitle'}>Changes</div>
                     <div className={'footerBarContent'}>
                         <div style={{display: 'block'}}>

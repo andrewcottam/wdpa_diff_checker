@@ -51,7 +51,7 @@ class AppBar extends React.Component {
                   <div className={'appBarTitle'}>World Database on Protected Areas | Diff Checker</div>
                   <div className={'appBarContent'}>
                       <div className={"sliderContainer"}>
-                          <div style={{ width: width, margin: 1 }}>
+                          <div style={{ width: width, margin: 'auto' }}>
                            <Range 
                               max={divisions}
                               marks={this.marks} 
@@ -66,11 +66,28 @@ class AppBar extends React.Component {
                           />
                           </div>
                       </div>
-                      <div className={'ZoomOutMapContainer'}>
+                      {/*<div className={'ZoomOutMapContainer'}>
                           <ZoomOutMap titleAccess={"Return to full extent"} className={'ZoomOutMap'} onClick={this.zoomOutMap.bind(this)}/>
-                          <Status status={'added'}/>
-                          <Status status={'removed'}/>
-                          <Status status={'changed'}/>
+                      </div>*/}
+                      <div className={'statsHolder'}>
+                        <div className={'globalStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view === 'global')) ? "inline" : "none"}}>
+                          <div><Status status={'total'}/> {this.props.globalTotal}</div>
+                        </div>
+                        <div className={'globalDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view === 'global')) ? "inline" : "none"}}>
+                          <Status status={'added'}/>{this.props.globalDiff&&this.props.globalDiff.added.toLocaleString()}
+                          <Status status={'removed'}/>{this.props.globalDiff&&this.props.globalDiff.removed.toLocaleString()}
+                          <Status status={'changed'}/>{this.props.globalDiff&&this.props.globalDiff.changed.toLocaleString()}
+                        </div>
+                        <div className={'countryStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view !== 'global')) ? "inline" : "none"}}>
+                          <span>{this.props.country && this.props.country.name}</span>
+                          <Status status={'total'}/> {this.props.country && this.props.country.total}
+                        </div>
+                        <div className={'countryDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view !== 'global')) ? "inline" : "none"}}>
+                          <span>{this.props.country && this.props.country.name}</span>
+                          <Status status={'added'}/>{this.props.country&&this.props.country.added.toLocaleString()}
+                          <Status status={'removed'}/>{this.props.country&&this.props.country.removed.toLocaleString()}
+                          <Status status={'changed'}/>{this.props.country&&this.props.country.changed.toLocaleString()}
+                        </div>
                       </div>
                   </div>
               </div>

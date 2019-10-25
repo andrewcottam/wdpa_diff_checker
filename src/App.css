@@ -26,7 +26,7 @@
 }
 
 .sliderContainer {
-  margin: 0px 30px;
+  margin: 6px 30px 0px 30px;
   height: 40px;
 }
 
@@ -231,6 +231,7 @@
 }
 .rc-slider-handle:focus{
   box-shadow: 0 0 0 5px red; /*set !important to update */
+  box-shadow: 0 0 0 0px red !important; /*set !important to update */
 }
 .rc-slider-dot-active{
   /*background-color: #96dbfa !important;*/
@@ -242,4 +243,8 @@
   border-color: red;
   box-shadow: 0 0 5px #57c5f7;
   cursor: grabbing;
+}
+.statsHolder{
+  text-align: center;
+  font-size:12px;
 }

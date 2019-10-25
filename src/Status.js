@@ -14,11 +14,14 @@ class Status extends React.Component {
 	        case 'changed':
 	            text = ""; //≠
 	            break;
+	        case 'total':
+	            text = "Σ"; //
+	            break;
 	        default:
 	            // code
 	    }
 		return (
-		    <span className={classname}>{text}</span>
+		    <span className={classname} style={{display: (this.props.hide) ? "none" : "inline"}}>{text}</span>
 		);
 	}
 }

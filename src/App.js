@@ -47,9 +47,9 @@ class App extends React.Component {
         {key:"geometry_shifted", text:"The boundary has moved", short_text:"Boundary moved", present: false, visible: true, layers:[window.LYR_FROM_GEOMETRY_SHIFTED_LINE,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE]},
         {key:"no_change", text:"No change", short_text:"No change", present: false, visible: true, layers:[window.LYR_TO_POLYGON, window.LYR_TO_POINT]},
         ], 
-        versions: [],
-        fromVersion: undefined,
-        toVersion: undefined,
+      versions: [],
+      fromVersion: undefined,
+      toVersion: undefined,
       sliderValues: [0,1]
     };
     this.ctrlDown = false;
@@ -58,6 +58,20 @@ class App extends React.Component {
     this.PAPopuptimer = []; 
     this.PAPopupListtimer = [];
     this.wdpaidsUnderMouse = [];
+  }
+  componentDidMount(){
+    //get the wdpa versions
+    this.getVersions();
+    //add listeners for the keys to control dragging the slider
+    this.keyDownEventListener = this.handleKeyDown.bind(this);
+    document.addEventListener("keydown", this.keyDownEventListener);
+    this.keyUpEventListener = this.handleKeyUp.bind(this);
+    document.addEventListener("keyup", this.keyUpEventListener);
+  }
+  componentWillUnmount(){
+    //remove event listeners
+    document.removeEventListener("keydown", this.keyDownEventListener);
+    document.removeEventListener("keyup", this.keyUpEventListener);
   }
   //gets all the available versions of the WDPA
   getVersions(){
@@ -76,28 +90,51 @@ class App extends React.Component {
       return {id: index + 1, title: dateFormat(_date, "mmmm yyyy"), shortTitle: dateFormat(_date, "mmm yy"), abbreviated: dateFormat(_date, "mmm_yyyy").toLowerCase()};
     });
     this.setState({versions: versions, sliderValues:[versions.length, versions.length]}, () => {
-      this.setFromToVersions(undefined, versions.length);  
+      this.setFromToVersions(versions.length, versions.length);  
     });
     
   }
-  //sets the versions
+  //slider events
+  onBeforeChange(values){
+    this.startMin = values[0];
+    this.startMax = values[1];
+    this.startDiff = values[1] - values[0];
+  }
+  onChange(values, marks){
+    let vals = Object.keys(marks);
+    if (this.ctrlDown) {
+        //see if we are going up or down
+        if ((values[0] < this.startMin) || (values[1] < this.startMax)) { 
+            if(values[0] -this.startDiff < Number(vals[0])) return;
+            this.newMin = values[0] - this.startDiff;
+            this.newMax = values[0];
+        }else{ //going up
+            if(values[1] > Number(vals[vals.length - 1])) return;
+            this.newMin = values[1] - this.startDiff;
+            this.newMax = values[1];
+        }
+        this.setSliderValues([this.newMin, this.newMax]);
+        this.startMin = this.newMin;
+        this.startMax = this.newMax;
+    }else{
+        this.setSliderValues(values);
+    }
+  }
+  setSliderValues(values){
+    //set the slider values
+    this.setState({sliderValues: values});
+    //set the from and to versions
+    this.setFromToVersions(values[0], values[1]);
+  }
+  //sets the from and to versions
   setFromToVersions(_from, _to){
-    let f = (_from === undefined) ? undefined : this.state.versions[_from-1];
-    this.setState({fromVersion: f , toVersion: this.state.versions[_to-1]});
-  }
-  componentDidMount(){
-    //get the wdpa versions
-    this.getVersions();
-    //add listeners for the keys to control dragging the slider
-    this.keyDownEventListener = this.handleKeyDown.bind(this);
-    document.addEventListener("keydown", this.keyDownEventListener);
-    this.keyUpEventListener = this.handleKeyUp.bind(this);
-    document.addEventListener("keyup", this.keyUpEventListener);
-  }
-  componentWillUnmount(){
-    //remove event listeners
-    document.removeEventListener("keydown", this.keyDownEventListener);
-    document.removeEventListener("keyup", this.keyUpEventListener);
+    this.setState({fromVersion: this.state.versions[_from - 1] , toVersion: this.state.versions[_to - 1]});
+    //if from and to are the same then get the global totals
+    if (_from === _to) {
+      this.getGlobalTotal(_to - 1);
+    }else{
+      this.getGlobalDiff(_to - 1);
+    }
   }
   handleKeyDown(e){
     //if the CTRL key is pressed then ctrlDown property
@@ -112,24 +149,46 @@ class App extends React.Component {
     //add event handlers to the map
     this.map.on("mousemove", this.mouseMove.bind(this));
   }
-  updateMappedLayers(){
+  //adds the country summaries to the map
+  addCountryPopups(){
+    if (this.state.view === 'country') return;
     //get the global diff summary
-    this.getGlobalSummary().then(() => {
-      //see if an iso3 parameter was passed in the query string
-      if (this.iso3) {
-        let country = this.global_summary_all.find(country => {
-          return country.iso3 === this.iso3;
-          });
-        this.setCountry(country);
-        this.iso3 = undefined;
-      }
-      //filter the countries for those that have diff data
-      this.getVisibleCountries();
+    let countryData;
+    //get the country reference data from the cached geojson data
+    let centroids = JSON.parse(JSON.stringify(geojson));
+    //get the country statistics
+    this._get(REST_BASE_URL + "get_wdpa_diff_global_summary?version=" + (this.state.toVersion.id - 1) + "&format=json").then(response => {
+      let global_summary_all = response.records.map(country => {
+        //find the matching item from the countries.json array
+        countryData = centroids.features.find(feature => feature.properties.iso3 === country.iso3);
+        //merge the two objects
+        return (countryData) ? Object.assign(country, countryData.properties, { "centroid": countryData.geometry.coordinates }) : null;
+      });
+      //filter out the nulls
+      this.global_summary_all = global_summary_all.filter((item) => !(item === null));
+      //get the countries that are visible
+      let visibleCountries = this.global_summary_all.filter(country => {
+         return (this.isCountryVisible('added', country) || this.isCountryVisible('removed', country) || this.isCountryVisible('changed', country));  
+      });
+      //set the state - this creates the country popups on the map
+      this.setState({global_summary: visibleCountries});
     });
   }
-  mapStyleLoaded(){
-    if (this.state.global_summary) this.getVisibleCountries();
-    this.initialBounds = this.map.getBounds();
+  //returns true if the country has protected areas with the passed status
+  isCountryVisible(status, country){
+    return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] > 0); 
+  }
+  //gets the global count of protected areas for the version
+  getGlobalTotal(version){
+    this._get(REST_BASE_URL + "get_wdpa_diff_global_total?version=" + version + "&format=json").then(response => {
+      this.setState({globalTotal: response.records[0].total.toLocaleString()});
+    });
+  }
+  //gets the global count of the differences in protected areas for the version
+  getGlobalDiff(version){
+    this._get(REST_BASE_URL + "get_wdpa_diff_global_diff?version=" + version + "&format=json").then(response => {
+      this.setState({globalDiff: response.records[0]});
+    });
   }
   zoomOutMap(){
     this.map.fitBounds(this.initialBounds,{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
@@ -145,48 +204,6 @@ class App extends React.Component {
         reject(err);
       });
     });
-  }
-  //rest request to get the global diff summary
-  getGlobalSummary() {
-    return new Promise((resolve, reject) => {
-      let countryData;
-      //get the country reference data from the cached geojson data
-      let countriesJson = JSON.parse(JSON.stringify(geojson));
-      //get the country statistics in this version
-      this._get(REST_BASE_URL + "get_wdpa_diff_global_summary?version=" + this.state.toVersion.id + "&format=json").then(response => {
-        let global_summary_all = response.records.map(country => {
-          //find the matching item from the countries.json array
-          countryData = countriesJson.features.find(feature => feature.properties.iso3 === country.iso3);
-          //merge the two objects
-          return (countryData) ? Object.assign(country, countryData.properties, { "centroid": countryData.geometry.coordinates }) : null;
-        });
-        //filter out the nulls
-        this.global_summary_all = global_summary_all.filter((item) => !(item === null));
-        resolve("GlobalSummaryRetrieved");
-      });
-    });
-  }
-  //returns true if the country has protected areas with the passed status
-  isCountryVisible(status, country){
-    return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] > 0); 
-  }
-  //filters the global summary for only the countries that need to be shown based on the statuses that the user wants to see
-  getVisibleCountries(){
-    if (this.global_summary_all === undefined) return;
-    //iterate through the countries and get only the ones that will be shown
-    let global_summary = this.global_summary_all.filter((country) => {
-      return (this.isCountryVisible('added', country) || this.isCountryVisible('removed', country) || this.isCountryVisible('changed', country));
-    });
-    //set the state - this creates the country popups on the map
-    this.setState({global_summary: global_summary});
-    //log how many features have been rendered
-    // let allFeatures = this.map.queryRenderedFeatures(this.map.getBounds());
-    // console.log("All features: " + allFeatures.length);
-    // let wdpaids = this.removeDuplicateFeatures(allFeatures, "wdpaid");
-    // console.log("Unique wdpaids: " + wdpaids.length);
-  }
-  showCountryPopups() {
-    this.getVisibleCountries();
   }
   //iterates through the country summary data and sets a flag in the status array if they are visible
   setStatusPresence(records, iso3){
@@ -224,22 +241,24 @@ class App extends React.Component {
     //set the bounds of the map
     this.map.fitBounds([[country.west, country.south],[country.east,country.north]],{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
     //hide the country popups and set the view type
-    this.setState({global_summary:[], view: "country", country: country, fromVersion: this.state.versions[this.state.toVersion.id-1]});
+    this.setState({global_summary:[], view: "country", country: country});
+    //set the diff stats
+    this.setState({diff: country});
     //get the country diff summary
-    this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
+    this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?version=" + (this.state.toVersion.id - 1) + "&format=json&iso3=" + country.iso3).then(response => {
       //set the visibility of the statuses in the statuses array
       this.setStatusPresence(response.records, country.iso3);
       this.setState({country_summary: response.records});
     });
     //get the individual changes in the protected areas
-    this._get(REST_BASE_URL + "get_wdpa_diff_country_diffs?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
+    this._get(REST_BASE_URL + "get_wdpa_diff_country_diffs?version=" + (this.state.toVersion.id - 1)+ "&format=json&iso3=" + country.iso3).then(response => {
       if (response.records.length>0) this.setState({country_pa_diffs: response.records});
     });
   }
   //gets the features under the cursor 
   mouseMove(e){
-    if ((this.map === undefined) || (this.map && !this.map.isStyleLoaded()) || (this.map && this.map.getLayer(window.LYR_TO_POLYGON) === undefined)) return;
-    let queryLayers = (this.state.fromVersion) ? [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT] : [window.LYR_TO_POLYGON, window.LYR_TO_POINT];
+    if ((this.state.view === 'global')||(this.state.sliderValues[0] === this.state.sliderValues[1])) return;
+    let queryLayers = [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT];
     var features = this.map.queryRenderedFeatures(e.point,{layers: queryLayers});
     if (features.length>0) {
       //remove any duplicate features (at the boundary between vector tiles there may be duplicates so remove them)
@@ -407,65 +426,59 @@ class App extends React.Component {
       this.getVisibleCountries();  
     });
   }
-  setVersion(version){
-    this.setState({fromVersion:  this.state.versions[version-1] , toVersion: this.state.versions[version]},() => {
-      this.updateMappedLayers();
-    });
-  }
-  //slider events
-  onBeforeChange(values){
-    this.startMin = values[0];
-    this.startMax = values[1];
-    this.startDiff = values[1] - values[0];
-  }
-  onChange(values, marks){
-    let vals = Object.keys(marks);
-    if (this.ctrlDown) {
-        //see if we are going up or down
-        if ((values[0] < this.startMin) || (values[1] < this.startMax)) { 
-            if(values[0] -this.startDiff < Number(vals[0])) return;
-            this.newMin = values[0] - this.startDiff;
-            this.newMax = values[0];
-        }else{ //going up
-            if(values[1] > Number(vals[vals.length - 1])) return;
-            this.newMin = values[1] - this.startDiff;
-            this.newMax = values[1];
-        }
-        this.setSliderValues([this.newMin, this.newMax]);
-        this.startMin = this.newMin;
-        this.startMax = this.newMax;
-    }else{
-        this.setSliderValues(values);
-    }
-  }
-  setSliderValues(values){
-    //set the slider values
-    this.setState({sliderValues: values});
-    //set the from and to versions
-    this.setFromToVersions(values[0], values[1]);
-  }
   render() {
     return (
       <React.Fragment>
         <MyMap 
           fromVersion={this.state.fromVersion} 
           toVersion={this.state.toVersion}
+          addCountryPopups={this.addCountryPopups.bind(this)}
           global_summary={this.state.global_summary}
           country_summary={this.state.country_summary}
-          showCountryPopups={this.showCountryPopups.bind(this)}
           country={this.state.country}
           setMap={this.mapReady.bind(this)}
-          mapStyleLoaded={this.mapStyleLoaded.bind(this)}
           showStatuses={this.state.showStatuses}
           statuses={this.state.statuses}
           clickCountryPopup={this.clickCountryPopup.bind(this)}
           view={this.state.view}
           attribution={"IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) August, 2019, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>"}
         />
-        <PAPopupList dataForPopupList={this.state.dataForPopupList} country_pa_diffs={this.state.country_pa_diffs} map={this.map} showPAPopup={this.showPAPopupFromList.bind(this)} onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}/> 
-        <PAPopup statuses={this.state.statuses} dataForPopup={this.state.dataForPopup} country_pa_diffs={this.state.country_pa_diffs} map={this.map} fromVersion={this.state.fromVersion} toVersion={this.state.toVersion} onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}/>
-        <AppBar versions={this.state.versions} onBeforeChange={this.onBeforeChange.bind(this)} onChange={this.onChange.bind(this)} values={this.state.sliderValues} zoomOutMap={this.zoomOutMap.bind(this)}/>
-        <FooterBar view={this.state.view} statuses={this.state.statuses} handleStatusChange={this.handleStatusChange.bind(this)}/>
+        <AppBar 
+          versions={this.state.versions} 
+          onBeforeChange={this.onBeforeChange.bind(this)} 
+          onChange={this.onChange.bind(this)} 
+          values={this.state.sliderValues} 
+          zoomOutMap={this.zoomOutMap.bind(this)} 
+          globalTotal={this.state.globalTotal} 
+          globalDiff={this.state.globalDiff} 
+          diff={this.state.diff} 
+          country={this.state.country}
+          view={this.state.view}
+        />
+        <PAPopupList 
+          dataForPopupList={this.state.dataForPopupList} 
+          country_pa_diffs={this.state.country_pa_diffs} 
+          map={this.map} 
+          showPAPopup={this.showPAPopupFromList.bind(this)} 
+          onMouseEnterPAPopuplist={this.onMouseEnterPAPopuplist.bind(this)} 
+          onMouseLeavePAPopuplist={this.onMouseLeavePAPopuplist.bind(this)}
+        /> 
+        <PAPopup 
+          statuses={this.state.statuses} 
+          dataForPopup={this.state.dataForPopup} 
+          country_pa_diffs={this.state.country_pa_diffs} 
+          map={this.map} 
+          fromVersion={this.state.fromVersion} 
+          toVersion={this.state.toVersion} 
+          onMouseEnterPAPopup={this.onMouseEnterPAPopup.bind(this)} 
+          onMouseLeavePAPopup={this.onMouseLeavePAPopup.bind(this)}
+        />
+        <FooterBar 
+          view={this.state.view} 
+          statuses={this.state.statuses} 
+          values={this.state.sliderValues} 
+          handleStatusChange={this.handleStatusChange.bind(this)}
+        />
       </React.Fragment>
     );
   }

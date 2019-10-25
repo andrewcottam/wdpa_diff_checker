@@ -39,42 +39,6 @@ class MyMap extends React.Component {
     this.mapLoadedEvent = this.mapLoaded.bind(this);
     this.map.on("load", this.mapLoadedEvent);
   }
-  componentDidUpdate(prevProps, prevState){
-    if (this.mapLoadedEvent) return; //the maps style has not laded
-    //see if the to version has changed
-    if (this.props.toVersion && (this.props.toVersion !== prevProps.toVersion)) {
-      this.addToLayers();
-    }
-    //see if the from version has changed
-    if (this.props.fromVersion){
-      if (this.props.fromVersion !== prevProps.fromVersion){
-        //add the to change layers - these need to be added first as the from layers go underneath
-        this.addToChangeLayers();
-        //add the from layers
-        this.addFromLayers();
-      }
-    }else{ //fromVersion is undefined so the user is not showing changes 
-      if (prevProps.fromVersion !== undefined){
-        //remove the to change layers
-        this.removeToChangeLayers();
-        //remove the from layers
-        this.removeFromLayers();
-        //unfilter the no_change layers
-        this.unfilterNoChangeLayers();
-      }
-    }
-    if (this.props.country_summary!==prevProps.country_summary) this.filterCountryLayers();
-    //see if the global summary has changed - if so create the country popups
-    if (this.props.global_summary !== prevProps.global_summary) {
-      //clear the existing popups
-      this.removePopups();
-      this.iso3s = [];
-      this.props.global_summary.forEach(country => {
-        this.iso3s.push(country.iso3);
-        this.addCountryPopup(country);
-      });
-    }      
-  }
   //called when the maps style has loaded
   mapLoaded(map){
     //remove the event handler using the actual event reference
@@ -82,11 +46,51 @@ class MyMap extends React.Component {
     this.mapLoadedEvent = undefined;
     //add the to sources and layers
     this.addToLayers();
-    this.props.mapStyleLoaded();
+  }
+  componentDidUpdate(prevProps, prevState){
+    if (this.mapLoadedEvent) return; //the maps style has not laded
+    //see if the to version has changed
+    if (this.props.toVersion && (this.props.toVersion.id !== prevProps.toVersion.id)) this.addToLayers();
+    //are the from and to versions different
+    if (this.props.fromVersion.id !== this.props.toVersion.id){
+      //if the from doesnt exist or it does but for a different version, then add it
+      if ((this.map.getSource(window.SRC_FROM_POLYGONS) === undefined) || ((this.map.getSource(window.SRC_FROM_POLYGONS) !== undefined) && (this.props.fromVersion.id !== prevProps.fromVersion.id))){
+        //add the to change layers - these need to be added first as the from layers go before them
+        this.addToChangeLayers();
+        //add the from layers
+        this.addFromLayers();
+      }
+    }else{ //from and to are the same
+      //remove the to change layers
+      this.removeToChangeLayers();
+      //remove the from layers
+      this.removeFromLayers();
+      //unfilter the no_change layers
+      this.unfilterNoChangeLayers();
+      //remove the popups
+      this.removePopups();
+    }
+    if (this.props.view === 'global'){
+      //request the data for the country popups
+      if (((this.props.fromVersion.id !== prevProps.fromVersion.id) || (this.props.toVersion.id !== prevProps.toVersion.id))&&(this.props.fromVersion.id !== this.props.toVersion.id)) this.props.addCountryPopups();
+      //render the country popups
+      if (this.props.global_summary !== prevProps.global_summary) {
+        //clear the existing popups
+        this.removePopups();
+        let iso3s = [];
+        //create and add the popups
+        this.props.global_summary.forEach(country => {
+          iso3s.push(country.iso3);
+          this.addCountryPopup(country);
+        });
+        this.filterToVersionByCountries(iso3s);
+      }      
+    }else{
+      if (this.props.fromVersion.id !== this.props.toVersion.id) this.filterCountryLayers();
+    }
   }
   //adds the sources and layers for the from version
   addFromLayers(){
-  console.log("addFromLayers")
     let _from = this.props.fromVersion.abbreviated;
     //add the sources
     this.addSource({id: window.SRC_FROM_POLYGONS, source: {type: "vector", tiles: [ TILES_PREFIX + "wdpa_" + _from + "_polygons" + TILES_SUFFIX]}});
@@ -105,13 +109,11 @@ class MyMap extends React.Component {
   }
   //removes the sources and layers for the from version
   removeFromLayers(){
-    console.log("removeFromLayers")
     if (this.map.getSource(window.SRC_FROM_POLYGONS)) this.removeSource(window.SRC_FROM_POLYGONS);
     if (this.map.getSource(window.SRC_FROM_POINTS)) this.removeSource(window.SRC_FROM_POINTS);
   }
   //adds the sources and layers for the to version
   addToLayers(){
-    console.log("addToLayers")
     let _to = this.props.toVersion.abbreviated;
     //add the sources
     this.addSource({id: window.SRC_TO_POLYGONS, source: {type: "vector", attribution: this.props.attribution, tiles: [ TILES_PREFIX + "wdpa_" + _to + "_polygons" + TILES_SUFFIX]}});
@@ -126,7 +128,6 @@ class MyMap extends React.Component {
   }
   //adds the change layers in the to version
   addToChangeLayers(){
-    console.log("addToChangeLayers")
     let _to = this.props.toVersion.abbreviated;
     //attribute change in protected areas layers
     this.addLayer({id: window.LYR_TO_CHANGED_ATTRIBUTE, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(99,148,69,0.4)", "fill-outline-color": "rgba(99,148,69,0.8)"}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_SELECTED_POLYGON});
@@ -144,7 +145,6 @@ class MyMap extends React.Component {
   }
   //removes the change layers in the to version
   removeToChangeLayers(){
-    console.log("removeToChangeLayers")
     if (this.map && !this.map.isStyleLoaded()) return;
     this.props.statuses.forEach(status => {
       if (status.key !== 'no_change'){
@@ -157,7 +157,6 @@ class MyMap extends React.Component {
     });
   }
   unfilterNoChangeLayers(){
-    console.log("unfilterNoChangeLayers")
     if (this.map && !this.map.isStyleLoaded()) return;
     let no_change_status = this.props.statuses.filter(status => status.key === 'no_change');
     no_change_status[0].layers.forEach(layer => this.map.setFilter(layer, null));
@@ -209,8 +208,12 @@ class MyMap extends React.Component {
   removePopups(){
     this.popups.forEach(popup => popup.remove());
   }
+  filterToVersionByCountries(iso3s){
+      let filter = ['in', 'iso3'].concat(iso3s);
+      this.map.setFilter(window.LYR_TO_POLYGON, filter);
+      this.map.setFilter(window.LYR_TO_POINT, filter);
+  }
   filterCountryLayers(){
-    console.log("MyMap filterCountryLayers")
     let toPolygonsFilter, toPointsFilter = [], addedPAs=[], removedPAs=[], changedPAs=[], geometryShiftedPAs=[], geometryPointCountChangedPAs= [], geometryPointToPolygonPAs = [], geometryChangedPAs =[];
     if (this.props.fromVersion){
       //get the stats data for the country
@@ -268,7 +271,6 @@ class MyMap extends React.Component {
     }    
   }
   render() {
-    console.log("MyMap rendering")
     return (
       <div id='map' className={'map'}></div>
     );
