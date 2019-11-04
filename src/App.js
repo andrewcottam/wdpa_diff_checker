@@ -51,7 +51,9 @@ class App extends React.Component {
       versions: [],
       fromVersion: undefined,
       toVersion: undefined,
-      sliderValues: [0,1]
+      sliderValues: [0,1],
+      gettingGlobalStats: false,
+      gettingCountryStats: false,
     };
     this.shiftDown = false;
     this.mouseOverPAPopup = false;
@@ -123,11 +125,18 @@ class App extends React.Component {
         //see if we are going up or down
         if ((values[0] < this.prevMin) || (values[1] < this.prevMax)) { 
             if(values[1] - this.prevDiff < Number(vals[0])) return;
+            if (this.prevDiff === 0){
+              this.newMin = values[0] - this.prevDiff;
+              this.newMax = values[0];
+            }else{
+              this.newMin = values[1] - this.prevDiff;
+              this.newMax = values[1];
+            }
         }else{ //going up
             if(values[1] > Number(vals[vals.length - 1])) return;
+            this.newMin = values[1] - this.prevDiff;
+            this.newMax = values[1];
         }
-        this.newMin = values[1] - this.prevDiff;
-        this.newMax = values[1];
         this.setSliderValues([this.newMin, this.newMax]);
         this.prevMin = this.newMin;
         this.prevMax = this.newMax;
@@ -177,9 +186,10 @@ class App extends React.Component {
   }
   //gets the global stats for added, removed and changed for the versions
   getGlobalDiffStats(_from, _to){
+    this.setState({gettingGlobalStats: true});
     let restUrl = (_to - _from === 1) ? "get_global_stats?version=" + _to + "&format=json" : "get_global_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
     this._get(REST_BASE_URL + restUrl).then(response => {
-      this.setState({globalDiff: response.records[0]});
+      this.setState({globalDiff: response.records[0], gettingGlobalStats: false});
     });
   }
   //gets the country stats for added, removed and changed for the versions
@@ -472,6 +482,7 @@ class App extends React.Component {
           diff={this.state.diff} 
           country={this.state.country}
           view={this.state.view}
+          gettingGlobalStats={this.state.gettingGlobalStats}
         />
         <PAPopupList 
           dataForPopupList={this.state.dataForPopupList} 

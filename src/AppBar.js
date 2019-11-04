@@ -5,6 +5,7 @@ import ZoomOutMap from '@material-ui/icons/ZoomOutMap';
 import Status from './Status.js';
 import Slider from 'rc-slider';
 import Tooltip from 'rc-tooltip';
+import fuzzy from './fuzzy.png';
 
 const createSliderWithTooltip = Slider.createSliderWithTooltip;
 const Range = createSliderWithTooltip(Slider.Range);
@@ -70,24 +71,25 @@ class AppBar extends React.Component {
                           <ZoomOutMap titleAccess={"Return to full extent"} className={'ZoomOutMap'} onClick={this.zoomOutMap.bind(this)}/>
                       </div>*/}
                       <div className={'statsHolder'}>
-                        <div className={'globalStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view === 'global')) ? "inline" : "none"}}>
+                        <div className={'globalStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
                           <div><Status status={'total'}/> {this.props.globalTotal}</div>
                         </div>
-                        <div className={'globalDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view === 'global')) ? "inline" : "none"}}>
+                        <div className={'globalDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
                           <Status status={'added'}/>{this.props.globalDiff&&this.props.globalDiff.added.toLocaleString()}
                           <Status status={'removed'}/>{this.props.globalDiff&&this.props.globalDiff.removed.toLocaleString()}
                           <Status status={'changed'}/>{this.props.globalDiff&&this.props.globalDiff.changed.toLocaleString()}
                         </div>
-                        <div className={'countryStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view !== 'global')) ? "inline" : "none"}}>
+                        <div className={'countryStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
                           <span>{this.props.country && this.props.country.name}</span>
                           <Status status={'total'}/> {this.props.country && this.props.country.total}
                         </div>
-                        <div className={'countryDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view !== 'global')) ? "inline" : "none"}}>
+                        <div className={'countryDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
                           <span>{this.props.country && this.props.country.name}</span>
                           <Status status={'added'}/>{this.props.country&&this.props.country.added.toLocaleString()}
                           <Status status={'removed'}/>{this.props.country&&this.props.country.removed.toLocaleString()}
                           <Status status={'changed'}/>{this.props.country&&this.props.country.changed.toLocaleString()}
                         </div>
+          	            <img src={fuzzy} alt="Loading" title={"Loading"} style={{display: (this.props.gettingGlobalStats ? 'inline' : 'none')}}/>
                       </div>
                   </div>
               </div>
