@@ -122,14 +122,12 @@ class App extends React.Component {
     if (this.shiftDown) {
         //see if we are going up or down
         if ((values[0] < this.prevMin) || (values[1] < this.prevMax)) { 
-            if(values[0] -this.prevDiff < Number(vals[0])) return;
-            this.newMin = values[0] - this.prevDiff;
-            this.newMax = values[0];
+            if(values[1] - this.prevDiff < Number(vals[0])) return;
         }else{ //going up
             if(values[1] > Number(vals[vals.length - 1])) return;
-            this.newMin = values[1] - this.prevDiff;
-            this.newMax = values[1];
         }
+        this.newMin = values[1] - this.prevDiff;
+        this.newMax = values[1];
         this.setSliderValues([this.newMin, this.newMax]);
         this.prevMin = this.newMin;
         this.prevMax = this.newMax;
@@ -145,6 +143,8 @@ class App extends React.Component {
   }
   //sets the from and to versions
   setFromToVersions(_from, _to){
+    //check that the _from and _to are different - the onChange event on the slider is called repeatedly as it is moved
+    if ((this.state.fromVersion&&this.state.fromVersion.id === _from)&&(this.state.toVersion&&this.state.toVersion.id === _to)) return;
     this.setState({fromVersion: this.state.versions[_from] , toVersion: this.state.versions[_to]});
     //if from and to are the same then get the global totals
     if (_from === _to) {
