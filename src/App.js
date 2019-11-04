@@ -1,3 +1,4 @@
+/*global fetch*/
 /*global URLSearchParams*/
 import React from 'react';
 import './App.css';
@@ -52,7 +53,7 @@ class App extends React.Component {
       toVersion: undefined,
       sliderValues: [0,1]
     };
-    this.ctrlDown = false;
+    this.shiftDown = false;
     this.mouseOverPAPopup = false;
     this.mouseOverPAPopuplist = false;
     this.PAPopuptimer = []; 
@@ -73,49 +74,65 @@ class App extends React.Component {
     document.removeEventListener("keydown", this.keyDownEventListener);
     document.removeEventListener("keyup", this.keyUpEventListener);
   }
-  //gets all the available versions of the WDPA
+  //gets all the available versions of the WDPA from the first month we have data available
   getVersions(){
-    //set the first date of the available data as 01/08/2019
-    let d = new Date(2019,7,1);
-    let today = new Date();
-    let dateArray = [];
-    //iterate through the months until the date is greater than today
-    do{
-      dateArray.push(new Date(d.getTime())); //clone the date
-      d = new Date(d.setMonth(d.getMonth()+1));
-    }
-    while (d < today);
-    //get the months and years between d1 and d2 (inclusive)
-    let versions = dateArray.map((_date, index) => {
-      return {id: index + 1, title: dateFormat(_date, "mmmm yyyy"), shortTitle: dateFormat(_date, "mmm yy"), abbreviated: dateFormat(_date, "mmm_yyyy").toLowerCase()};
+    this.getDateArray().then((dateArray) =>{
+      //get the months and years between d1 and d2 (inclusive)
+      let versions = dateArray.map((_date, index) => {
+        return {id: index, title: dateFormat(_date, "mmmm yyyy"), shortTitle: dateFormat(_date, "mmm yy"), key: dateFormat(_date, "mmm_yyyy").toLowerCase()};
+      });
+      this.setState({versions: versions, sliderValues:[versions.length, versions.length]}, () => {
+        this.setFromToVersions(versions.length - 1, versions.length - 1);  
+      });
     });
-    this.setState({versions: versions, sliderValues:[versions.length, versions.length]}, () => {
-      this.setFromToVersions(versions.length, versions.length);  
+  }
+  getDateArray(){
+    return new Promise((resolve, reject) => {
+      //set the first date of the available data as 01/08/2019
+      let d = new Date(2019,7,1);
+      let today = new Date();
+      let dateArray = [];
+      let validDates = [];
+      //iterate through the months until the date is greater than today
+      do{
+        dateArray.push(new Date(d.getTime())); //clone the date
+        d = new Date(d.setMonth(d.getMonth()+1)); //increment the date by 1 month
+      }
+      while (d < today);
+      //iterate through the months and test the call to get the vector tiles
+      dateArray.forEach((_date, index) => {
+        let url = window.TILES_PREFIX + "wdpa_" + dateFormat(_date, "mmm_yyyy").toLowerCase() + "_polygons&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:2&TileCol=1&TileRow=1";
+        fetch(url).then(response => {
+          //if the call succeeds then add the date
+          if (response.status !== 400) validDates.push(_date);
+          //if this is the last date then resolve the promise
+          if (index === dateArray.length -1) resolve(validDates);
+        });
+      });
     });
-    
   }
   //slider events
   onBeforeChange(values){
-    this.startMin = values[0];
-    this.startMax = values[1];
-    this.startDiff = values[1] - values[0];
+    this.prevMin = values[0];
+    this.prevMax = values[1];
+    this.prevDiff = values[1] - values[0];
   }
   onChange(values, marks){
     let vals = Object.keys(marks);
-    if (this.ctrlDown) {
+    if (this.shiftDown) {
         //see if we are going up or down
-        if ((values[0] < this.startMin) || (values[1] < this.startMax)) { 
-            if(values[0] -this.startDiff < Number(vals[0])) return;
-            this.newMin = values[0] - this.startDiff;
+        if ((values[0] < this.prevMin) || (values[1] < this.prevMax)) { 
+            if(values[0] -this.prevDiff < Number(vals[0])) return;
+            this.newMin = values[0] - this.prevDiff;
             this.newMax = values[0];
         }else{ //going up
             if(values[1] > Number(vals[vals.length - 1])) return;
-            this.newMin = values[1] - this.startDiff;
+            this.newMin = values[1] - this.prevDiff;
             this.newMax = values[1];
         }
         this.setSliderValues([this.newMin, this.newMax]);
-        this.startMin = this.newMin;
-        this.startMax = this.newMax;
+        this.prevMin = this.newMin;
+        this.prevMax = this.newMax;
     }else{
         this.setSliderValues(values);
     }
@@ -128,20 +145,23 @@ class App extends React.Component {
   }
   //sets the from and to versions
   setFromToVersions(_from, _to){
-    this.setState({fromVersion: this.state.versions[_from - 1] , toVersion: this.state.versions[_to - 1]});
+    this.setState({fromVersion: this.state.versions[_from] , toVersion: this.state.versions[_to]});
     //if from and to are the same then get the global totals
     if (_from === _to) {
-      this.getGlobalTotal(_to - 1);
+      this.getGlobalTotal(_to);
     }else{
-      this.getGlobalDiff(_to - 1);
+      //get the global totals for added, removed and changed
+      this.getGlobalDiffStats(_from, _to);
+      //get the country totals for added, removed and changed
+      this.getCountryDiffStats(_from, _to);
     }
   }
   handleKeyDown(e){
-    //if the CTRL key is pressed then ctrlDown property
-    if ((e.keyCode === 17) && (!(this.ctrlDown))) this.ctrlDown = true;
+    //if the Shift key is pressed then shiftDown property
+    if ((e.keyCode === 16) && (!(this.shiftDown))) this.shiftDown = true;
   }
   handleKeyUp(e){
-    this.ctrlDown = false;
+    this.shiftDown = false;
   }
   //the mapbox gl map is ready
   mapReady(map){
@@ -149,15 +169,27 @@ class App extends React.Component {
     //add event handlers to the map
     this.map.on("mousemove", this.mouseMove.bind(this));
   }
-  //adds the country summaries to the map
-  addCountryPopups(){
-    if (this.state.view === 'country') return;
-    //get the global diff summary
+  //gets the global count of protected areas for the version
+  getGlobalTotal(version){
+    this._get(REST_BASE_URL + "get_global_total?version=" + version + "&format=json").then(response => {
+      this.setState({globalTotal: response.records[0].total.toLocaleString()});
+    });
+  }
+  //gets the global stats for added, removed and changed for the versions
+  getGlobalDiffStats(_from, _to){
+    let restUrl = (_to - _from === 1) ? "get_global_stats?version=" + _to + "&format=json" : "get_global_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
+    this._get(REST_BASE_URL + restUrl).then(response => {
+      this.setState({globalDiff: response.records[0]});
+    });
+  }
+  //gets the country stats for added, removed and changed for the versions
+  getCountryDiffStats(_from, _to){
     let countryData;
     //get the country reference data from the cached geojson data
     let centroids = JSON.parse(JSON.stringify(geojson));
     //get the country statistics
-    this._get(REST_BASE_URL + "get_wdpa_diff_global_summary?version=" + (this.state.toVersion.id - 1) + "&format=json").then(response => {
+    let restUrl = (_to - _from === 1) ? "get_country_stats?version=" + _to + "&format=json" : "get_country_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
+    this._get(REST_BASE_URL + restUrl).then(response => {
       let global_summary_all = response.records.map(country => {
         //find the matching item from the countries.json array
         countryData = centroids.features.find(feature => feature.properties.iso3 === country.iso3);
@@ -177,18 +209,6 @@ class App extends React.Component {
   //returns true if the country has protected areas with the passed status
   isCountryVisible(status, country){
     return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] > 0); 
-  }
-  //gets the global count of protected areas for the version
-  getGlobalTotal(version){
-    this._get(REST_BASE_URL + "get_wdpa_diff_global_total?version=" + version + "&format=json").then(response => {
-      this.setState({globalTotal: response.records[0].total.toLocaleString()});
-    });
-  }
-  //gets the global count of the differences in protected areas for the version
-  getGlobalDiff(version){
-    this._get(REST_BASE_URL + "get_wdpa_diff_global_diff?version=" + version + "&format=json").then(response => {
-      this.setState({globalDiff: response.records[0]});
-    });
   }
   zoomOutMap(){
     this.map.fitBounds(this.initialBounds,{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
@@ -241,18 +261,16 @@ class App extends React.Component {
     //set the bounds of the map
     this.map.fitBounds([[country.west, country.south],[country.east,country.north]],{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
     //hide the country popups and set the view type
-    this.setState({global_summary:[], view: "country", country: country});
-    //set the diff stats
-    this.setState({diff: country});
-    //get the country diff summary
-    this._get(REST_BASE_URL + "get_wdpa_diff_country_summary?version=" + (this.state.toVersion.id - 1) + "&format=json&iso3=" + country.iso3).then(response => {
-      //set the visibility of the statuses in the statuses array
-      this.setStatusPresence(response.records, country.iso3);
-      this.setState({country_summary: response.records});
+    this.setState({global_summary:[], view: "country", country: country, diff: country}, () => {
+      
     });
-    //get the individual changes in the protected areas
-    this._get(REST_BASE_URL + "get_wdpa_diff_country_diffs?version=" + (this.state.toVersion.id - 1)+ "&format=json&iso3=" + country.iso3).then(response => {
-      if (response.records.length>0) this.setState({country_pa_diffs: response.records});
+  }
+  //gets the country changes (status and wdpaid array)
+  getCountryDiff(){
+    this._get(REST_BASE_URL + "get_wdpa_diff_country_summary2?fromversion=" + (this.state.fromVersion.id - 1) + "&toversion=" + (this.state.toVersion.id - 1) + "&format=json&iso3=" + this.state.country.iso3).then(response => {
+      //set the visibility of the statuses in the statuses array
+      this.setStatusPresence(response.records, this.state.country.iso3);
+      this.setState({country_summary: response.records});
     });
   }
   //gets the features under the cursor 
@@ -432,7 +450,7 @@ class App extends React.Component {
         <MyMap 
           fromVersion={this.state.fromVersion} 
           toVersion={this.state.toVersion}
-          addCountryPopups={this.addCountryPopups.bind(this)}
+          getCountryDiff={this.getCountryDiff.bind(this)}
           global_summary={this.state.global_summary}
           country_summary={this.state.country_summary}
           country={this.state.country}

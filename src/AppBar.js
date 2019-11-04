@@ -37,7 +37,7 @@ class AppBar extends React.Component {
   render() {
     if (this.props.versions === undefined) return null;
     //get the width of the slider depending on how many versions of the WDPA we have
-    let divisions = this.props.versions.length + 1; //a division at the beginning and at the end
+    let divisions = this.props.versions.length; //an extra division at the end
     let width = (divisions * 60); //60px between each mark
     //get the marks for the slider
     this.marks = {};
@@ -58,7 +58,7 @@ class AppBar extends React.Component {
                               step={null}
                               count={2} 
                               value={this.props.values}
-                              trackStyle={(this.props.ctrlDown ? [{ backgroundColor: '#bbdbfa' }] : [{ backgroundColor: '#96dbfa' }])} 
+                              trackStyle={(this.props.shiftDown ? [{ backgroundColor: '#bbdbfa' }] : [{ backgroundColor: '#96dbfa' }])} 
                               handleStyle={[{ backgroundColor: '#96dbfa' }, { backgroundColor: 'white' }]}
                               onBeforeChange={this.onBeforeChange.bind(this)}
                               onChange={this.onChange.bind(this)}
