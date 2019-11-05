@@ -6,7 +6,7 @@ import mapboxgl from 'mapbox-gl';
 // const INITIAL_CENTER = [-175.15, -21.15]; 
 const INITIAL_CENTER = [0, 0];
 const INITIAL_ZOOM = [2];
-const INITIAL_FILTER = ['==', 'wdpaid','-1'];
+const INITIAL_FILTER = ['==', 'wdpa_pid','-1'];
 //paint properties
 const CIRCLE_RADIUS_STOPS = {"stops": [[5, 1],[10, 5], [15, 8]]};
 const P_TO_CHANGED_GEOMETRY = { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(0,0,0,0)"};
@@ -82,16 +82,13 @@ class MyMap extends React.Component {
         this.filterToVersionByCountries(iso3s);
       }      
     }else{
-      //request the data for the country maps
-      if (((this.props.fromVersion.id !== prevProps.fromVersion.id) || (this.props.toVersion.id !== prevProps.toVersion.id))&&(this.props.fromVersion.id !== this.props.toVersion.id)) this.props.getCountryDiff();
-      //render the change maps
-      if (this.props.country_summary !== prevProps.country_summary) {
-        if (this.props.fromVersion.id !== this.props.toVersion.id) this.filterCountryLayers();
-      }
+      //render the country change maps
+      if (this.props.fromVersion.id !== this.props.toVersion.id) this.filterCountryLayers();
     }
   }
   //adds the sources and layers for the from version
   addFromLayers(){
+    console.log("addFromLayers")
     let _from = this.props.fromVersion.key;
     //add the sources
     this.addSource({id: window.SRC_FROM_POLYGONS, source: {type: "vector", tiles: [ window.TILES_PREFIX + "wdpa_" + _from + "_polygons" + window.TILES_SUFFIX]}});
@@ -110,11 +107,13 @@ class MyMap extends React.Component {
   }
   //removes the sources and layers for the from version
   removeFromLayers(){
+    console.log("removeFromLayers")
     if (this.map.getSource(window.SRC_FROM_POLYGONS)) this.removeSource(window.SRC_FROM_POLYGONS);
     if (this.map.getSource(window.SRC_FROM_POINTS)) this.removeSource(window.SRC_FROM_POINTS);
   }
   //adds the sources and layers for the to version
   addToLayers(){
+    console.log("addToLayers")
     let _to = this.props.toVersion.key;
     //add the sources
     this.addSource({id: window.SRC_TO_POLYGONS, source: {type: "vector", attribution: this.props.attribution, tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_polygons" + window.TILES_SUFFIX]}});
@@ -126,9 +125,12 @@ class MyMap extends React.Component {
     this.addLayer({id: window.LYR_TO_SELECTED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_POLYGON, filter:INITIAL_FILTER});
     this.addLayer({id: window.LYR_TO_SELECTED_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_LINE, filter:INITIAL_FILTER});
     this.addLayer({id: window.LYR_TO_SELECTED_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: P_SELECTED_POINT, filter:INITIAL_FILTER});
+    //add the change layers if needed
+    if (this.props.fromVersion.id !== this.props.toVersion.id) this.addToChangeLayers();
   }
   //adds the change layers in the to version
   addToChangeLayers(){
+    console.log("addToChangeLayers")
     let _to = this.props.toVersion.key;
     //attribute change in protected areas layers
     this.addLayer({id: window.LYR_TO_CHANGED_ATTRIBUTE, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(99,148,69,0.4)", "fill-outline-color": "rgba(99,148,69,0.8)"}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_SELECTED_POLYGON});
@@ -146,6 +148,7 @@ class MyMap extends React.Component {
   }
   //removes the change layers in the to version
   removeToChangeLayers(){
+    console.log("removeToChangeLayers")
     if (this.map && !this.map.isStyleLoaded()) return;
     this.props.statuses.forEach(status => {
       if (status.key !== 'no_change'){
@@ -164,7 +167,7 @@ class MyMap extends React.Component {
   }
   //adds a source to the map
   addSource(details){
-    //if the layer already exists then delete it
+    //if the source already exists then delete it
     if (this.map.getSource(details.id)) this.removeSource(details.id);
     this.map.addSource(details.id, details.source);
   }
@@ -221,22 +224,22 @@ class MyMap extends React.Component {
       this.props.country_summary.forEach(record => {
         switch (record.status) {
           case 'added':
-            addedPAs = record.wdpaids;
+            addedPAs = record.wdpa_pids;
             break;
           case 'removed':
-            removedPAs = record.wdpaids;
+            removedPAs = record.wdpa_pids;
             break;
           case 'changed':
-            changedPAs = record.wdpaids;
+            changedPAs = record.wdpa_pids;
             break;
           case 'geometry_shifted':
-            geometryShiftedPAs = record.wdpaids;
+            geometryShiftedPAs = record.wdpa_pids;
             break;
           case 'point_count_changed':
-            geometryPointCountChangedPAs = record.wdpaids;
+            geometryPointCountChangedPAs = record.wdpa_pids;
             break;
           case 'point_to_polygon':
-            geometryPointToPolygonPAs = record.wdpaids;
+            geometryPointToPolygonPAs = record.wdpa_pids;
             break;
           default:
             // code
@@ -245,30 +248,30 @@ class MyMap extends React.Component {
       //get the array of all protected areas that have changed geometries
       geometryChangedPAs = geometryShiftedPAs.concat(geometryPointCountChangedPAs).concat(geometryPointToPolygonPAs);
       //the toLayer should exclude all of the other protected areas that are changed, added or have their geometry shifted
-      toPolygonsFilter = ['all',['!in', 'wdpaid'].concat(changedPAs).concat(addedPAs).concat(geometryChangedPAs),['in', 'iso3', this.props.country.iso3]];
+      toPolygonsFilter = ['all',['!in', 'wdpa_pid'].concat(changedPAs).concat(addedPAs).concat(geometryChangedPAs),['in', 'iso3', this.props.country.iso3]];
       //the toPoints layer should exclude all new point PAs (which will be shown in blue)
-      toPointsFilter = ['all',['!in', 'wdpaid'].concat(addedPAs),['in', 'iso3', this.props.country.iso3]];        
+      toPointsFilter = ['all',['!in', 'wdpa_pid'].concat(addedPAs),['in', 'iso3', this.props.country.iso3]];        
       //the changed layer should exclude all of the other protected areas that have had their geometry changed - these will be rendered with dashed outlines
       changedPAs = changedPAs.filter(item => !geometryChangedPAs.includes(item));
       //set the filters on the individual layers
       if (this.props.fromVersion) { //we are showing changes
-        this.map.setFilter(window.LYR_FROM_DELETED_POLYGON,['in', 'wdpaid'].concat(removedPAs));
-        this.map.setFilter(window.LYR_FROM_DELETED_POINT, ['in', 'wdpaid'].concat(removedPAs));
-        this.map.setFilter(window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON, ['in', 'wdpaid'].concat(geometryPointToPolygonPAs));
-        this.map.setFilter(window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE, ['in', 'wdpaid'].concat(geometryPointCountChangedPAs));
-        this.map.setFilter(window.LYR_FROM_GEOMETRY_SHIFTED_LINE, ['in', 'wdpaid'].concat(geometryShiftedPAs));
+        this.map.setFilter(window.LYR_FROM_DELETED_POLYGON,['in', 'wdpa_pid'].concat(removedPAs));
+        this.map.setFilter(window.LYR_FROM_DELETED_POINT, ['in', 'wdpa_pid'].concat(removedPAs));
+        this.map.setFilter(window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON, ['in', 'wdpa_pid'].concat(geometryPointToPolygonPAs));
+        this.map.setFilter(window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE, ['in', 'wdpa_pid'].concat(geometryPointCountChangedPAs));
+        this.map.setFilter(window.LYR_FROM_GEOMETRY_SHIFTED_LINE, ['in', 'wdpa_pid'].concat(geometryShiftedPAs));
       }
       this.map.setFilter(window.LYR_TO_POLYGON, toPolygonsFilter);
       this.map.setFilter(window.LYR_TO_POINT, toPointsFilter);
-      this.map.setFilter(window.LYR_TO_CHANGED_ATTRIBUTE, ['in', 'wdpaid'].concat(changedPAs));
-      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_TO_POLYGON, ['in', 'wdpaid'].concat(geometryPointToPolygonPAs));
-      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE, ['in', 'wdpaid'].concat(geometryPointToPolygonPAs));
-      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON, ['in', 'wdpaid'].concat(geometryPointCountChangedPAs));
-      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE, ['in', 'wdpaid'].concat(geometryPointCountChangedPAs));
-      this.map.setFilter(window.LYR_TO_GEOMETRY_SHIFTED_POLYGON, ['in', 'wdpaid'].concat(geometryShiftedPAs));
-      this.map.setFilter(window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE, ['in', 'wdpaid'].concat(geometryShiftedPAs));
-      this.map.setFilter(window.LYR_TO_NEW_POLYGON, ['in', 'wdpaid'].concat(addedPAs));
-      this.map.setFilter(window.LYR_TO_NEW_POINT, ['in', 'wdpaid'].concat(addedPAs));
+      this.map.setFilter(window.LYR_TO_CHANGED_ATTRIBUTE, ['in', 'wdpa_pid'].concat(changedPAs));
+      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_TO_POLYGON, ['in', 'wdpa_pid'].concat(geometryPointToPolygonPAs));
+      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE, ['in', 'wdpa_pid'].concat(geometryPointToPolygonPAs));
+      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON, ['in', 'wdpa_pid'].concat(geometryPointCountChangedPAs));
+      this.map.setFilter(window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE, ['in', 'wdpa_pid'].concat(geometryPointCountChangedPAs));
+      this.map.setFilter(window.LYR_TO_GEOMETRY_SHIFTED_POLYGON, ['in', 'wdpa_pid'].concat(geometryShiftedPAs));
+      this.map.setFilter(window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE, ['in', 'wdpa_pid'].concat(geometryShiftedPAs));
+      this.map.setFilter(window.LYR_TO_NEW_POLYGON, ['in', 'wdpa_pid'].concat(addedPAs));
+      this.map.setFilter(window.LYR_TO_NEW_POINT, ['in', 'wdpa_pid'].concat(addedPAs));
     }    
   }
   render() {

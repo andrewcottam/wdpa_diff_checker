@@ -101,10 +101,15 @@
 }
 
 .stat {
-  padding-left: 1px;
-  padding-right: 4px;
+  padding-left: 10px;
+  padding-right: 1px;
+  font-size:10px;
 }
 
+.total{
+  padding-right: 3px;
+  font-size:10px;
+}
 .added {
   color: rgb(63, 127, 191);
 }
@@ -113,7 +118,12 @@
   color: red;
 }
 
-.changed {}
+.changed {
+  color:darkgray;
+}
+.no_change {
+  color:darkgray;
+}
 
 #popup {
   position: absolute;

@@ -3,7 +3,7 @@ import Changed from './Changed.js';
 import Status from './Status.js';
 import { getFeatureStatus } from './genericFunctions.js';
 
-const TITLE_LINK = "Click to open the protected area in the Protected Planet website";
+const TITLE_LINK = "Click to open in the Protected Planet website";
 const URL_PP = "https://www.protectedplanet.net/";
 
 class PAPopup extends React.Component {
@@ -13,13 +13,13 @@ class PAPopup extends React.Component {
 		//check that the diff data has loaded
 		if (this.props.country_pa_diffs.length === 0) return;
 		//get the data for the feature under the mouse
-		let pa_data = this.props.country_pa_diffs.find(pa => pa.wdpaid === Number(props.wdpaid)); //wdpaid is BigDecimal in Geoserver by default and this gets parsed to a string type
+		let pa_data = this.props.country_pa_diffs.find(pa => pa.wdpa_pid === props.wdpa_pid); 
 		//get the previous version of the feature either from the points layer of the polygons layer
 		let previous_feature;
 		if (pa_data.geometry_change && pa_data.geometry_change === "point to polygon"){
-			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POINTS, {sourceLayer: "wdpa_" + pa_data.from + "_points", filter: ["==", "wdpaid", props.wdpaid]})[0];
+			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POINTS, {sourceLayer: "wdpa_" + pa_data.from + "_points", filter: ["==", "wdpa_pid", props.wdpa_pid]})[0];
 		}else{
-			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POLYGONS, {sourceLayer: "wdpa_" + pa_data.from + "_polygons", filter: ["==", "wdpaid", props.wdpaid]})[0];
+			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POLYGONS, {sourceLayer: "wdpa_" + pa_data.from + "_polygons", filter: ["==", "wdpa_pid", props.wdpa_pid]})[0];
 		}
 		//attributes have changed - make an array of the data
 		if (pa_data.attribute_change){
@@ -39,7 +39,7 @@ class PAPopup extends React.Component {
 		let top = this.props.dataForPopup.point.y - 25 + 'px';
 		let feature = this.props.dataForPopup.features[0];
 		let children, status="", link;
-		link = <span className={"ppLink underline"}><a href={URL_PP + feature.properties.wdpaid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpaid}</a></span>;
+		link = <span className={"ppLink underline"}><a href={URL_PP + feature.properties.wdpa_pid} target='_blank'  rel="noopener noreferrer" title={TITLE_LINK}>{feature.properties.wdpa_pid}</a></span>;
 		status = getFeatureStatus(feature);
 		switch (status) {
 			case "changed":

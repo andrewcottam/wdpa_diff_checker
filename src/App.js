@@ -37,7 +37,7 @@ class App extends React.Component {
       global_summary: [],
       country_summary: [],
       country_pa_diffs: [],
-      showStatuses: ['added','removed'], 
+      showStatuses: ['added','removed','changed','no_change'], 
       view: 'global',
       statuses: [
         {key:"added", text:"Added", short_text:"Added", present: false, visible: true, layers:[window.LYR_TO_NEW_POLYGON, window.LYR_TO_NEW_POINT]},
@@ -60,7 +60,7 @@ class App extends React.Component {
     this.mouseOverPAPopuplist = false;
     this.PAPopuptimer = []; 
     this.PAPopupListtimer = [];
-    this.wdpaidsUnderMouse = [];
+    this.wdpa_pidsUnderMouse = [];
   }
   componentDidMount(){
     //get the wdpa versions
@@ -243,7 +243,7 @@ class App extends React.Component {
       if (status.key !== "no_change"){
         return Object.assign(status, {present: _presences.indexOf(status.key) !== -1});
       }else{
-        //the no_change status is handled differently as we dont want to retrieve all wdpaids for a country which havent changed as this is lots of data, potentially, but we can get the no_change country statistics from the global summary
+        //the no_change status is handled differently as we dont want to retrieve all wdpa_pids for a country which havent changed as this is lots of data, potentially, but we can get the no_change country statistics from the global summary
         let global_summary_data = this.global_summary_all.find(item => { return item.iso3 === iso3});
         let no_change_status = _statuses.find(item => item.key === 'no_change');
         return Object.assign(no_change_status, {present: global_summary_data.no_change > 0});
@@ -272,15 +272,16 @@ class App extends React.Component {
     this.map.fitBounds([[country.west, country.south],[country.east,country.north]],{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
     //hide the country popups and set the view type
     this.setState({global_summary:[], view: "country", country: country, diff: country}, () => {
-      
-    });
-  }
-  //gets the country changes (status and wdpaid array)
-  getCountryDiff(){
-    this._get(REST_BASE_URL + "get_wdpa_diff_country_summary2?fromversion=" + (this.state.fromVersion.id - 1) + "&toversion=" + (this.state.toVersion.id - 1) + "&format=json&iso3=" + this.state.country.iso3).then(response => {
-      //set the visibility of the statuses in the statuses array
-      this.setStatusPresence(response.records, this.state.country.iso3);
-      this.setState({country_summary: response.records});
+      let restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_summary?version=" + this.state.toVersion.id : "get_country_summary2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
+      this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3).then(response => {
+        //set the visibility of the statuses in the statuses array
+        this.setStatusPresence(response.records, this.state.country.iso3);
+        this.setState({country_summary: response.records});
+      });
+      //get the individual changes in the protected areas
+      this._get(REST_BASE_URL + "get_country_diffs?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
+        if (response.records.length>0) this.setState({country_pa_diffs: response.records});
+      });
     });
   }
   //gets the features under the cursor 
@@ -290,13 +291,13 @@ class App extends React.Component {
     var features = this.map.queryRenderedFeatures(e.point,{layers: queryLayers});
     if (features.length>0) {
       //remove any duplicate features (at the boundary between vector tiles there may be duplicates so remove them)
-      features = this.removeDuplicateFeatures(features, "wdpaid");
-      //get the unique wdpaids values 
-      let wdpaids = features.map(feature => feature.properties.wdpaid);
+      features = this.removeDuplicateFeatures(features, "wdpa_pid");
+      //get the unique wdpa_pids values 
+      let wdpa_pids = features.map(feature => feature.properties.wdpa_pid);
       //compare the wdpas with the previous features under the mouse to see if there are any differences
-      if (!this.arraysAreTheSame(wdpaids,this.wdpaidsUnderMouse)){
+      if (!this.arraysAreTheSame(wdpa_pids,this.wdpa_pidsUnderMouse)){
         this.onMouseEnter({point: e.point, features: features});
-        this.wdpaidsUnderMouse = wdpaids;
+        this.wdpa_pidsUnderMouse = wdpa_pids;
       }
     }else{
       //no features under the cursor
@@ -335,8 +336,8 @@ class App extends React.Component {
     }
   }
   clearPopups(){
-    //reset the local variable that has the wdpaids
-    this.wdpaidsUnderMouse = [];
+    //reset the local variable that has the wdpa_pids
+    this.wdpa_pidsUnderMouse = [];
     //the PAPopupList is currently shown and we dont want to close it
     if (this.state.dataForPopup && this.state.dataForPopup.features && this.state.dataForPopup.features.length >1) return; 
     //deselect features immediately 
@@ -392,7 +393,7 @@ class App extends React.Component {
     //iterate through the layers that need to be highlighted
     rule.highlightLayers.forEach((item) => {
       //set the filter on the highlightLayers
-      this.map.setFilter(item.layer, ['==','wdpaid', feature.properties.wdpaid]);
+      this.map.setFilter(item.layer, ['==','wdpa_pid', feature.properties.wdpa_pid]);
       //increase the opacity
       if (!USE_SELECTION_COLOR) this.increaseOpacity(item.paintPropertyFrom, item.layer);
     });
@@ -400,12 +401,12 @@ class App extends React.Component {
   //deselects all features 
   deselectFeatures(){
     if ((this.map === undefined) || (this.map && !this.map.isStyleLoaded())) return;
-    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POINT, ['==','wdpaid', '-1']);              
-    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_LINE, ['==','wdpaid', '-1']);              
-    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POLYGON, ['==','wdpaid', '-1']);              
-    this.map.setFilter(window.LYR_TO_SELECTED_POINT, ['==','wdpaid', '-1']);              
-    this.map.setFilter(window.LYR_TO_SELECTED_LINE, ['==','wdpaid', '-1']);              
-    this.map.setFilter(window.LYR_TO_SELECTED_POLYGON, ['==','wdpaid', '-1']);
+    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POINT, ['==','wdpa_pid', '-1']);              
+    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_LINE, ['==','wdpa_pid', '-1']);              
+    if (this.state.fromVersion) this.map.setFilter(window.LYR_FROM_SELECTED_POLYGON, ['==','wdpa_pid', '-1']);              
+    this.map.setFilter(window.LYR_TO_SELECTED_POINT, ['==','wdpa_pid', '-1']);              
+    this.map.setFilter(window.LYR_TO_SELECTED_LINE, ['==','wdpa_pid', '-1']);              
+    this.map.setFilter(window.LYR_TO_SELECTED_POLYGON, ['==','wdpa_pid', '-1']);
     //reset the selection color in the LYR_TO_SELECTED_POLYGON layer - too slow fades in slowly
     // this.map.setPaintProperty(window.LYR_TO_SELECTED_POLYGON, "fill-color", "rgba(0,0,0,0)");
   }
@@ -460,7 +461,6 @@ class App extends React.Component {
         <MyMap 
           fromVersion={this.state.fromVersion} 
           toVersion={this.state.toVersion}
-          getCountryDiff={this.getCountryDiff.bind(this)}
           global_summary={this.state.global_summary}
           country_summary={this.state.country_summary}
           country={this.state.country}

@@ -2,17 +2,20 @@ import React from 'react';
 
 class Status extends React.Component {
 	render() {
-	    let classname = "stat " + this.props.status;
+	    let classname = (this.props.status !== 'total') ? "stat " + this.props.status : this.props.status;
 	    let text="";
 	    switch (this.props.status) {
 	        case 'added':
-	            text = "++";
+	            text = "+";
 	            break;
 	        case 'removed':
-	            text = "--";
+	            text = "-";
 	            break;
 	        case 'changed':
-	            text = ""; //≠
+	            text = "≠"; //≠Δ
+	            break;
+	        case 'no_change':
+	            text = "="; //≠Δ
 	            break;
 	        case 'total':
 	            text = "Σ"; //
