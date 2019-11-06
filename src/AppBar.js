@@ -6,6 +6,7 @@ import Status from './Status.js';
 import Slider from 'rc-slider';
 import Tooltip from 'rc-tooltip';
 import fuzzy from './fuzzy.png';
+import StatsBar from './StatsBar.js';
 
 const createSliderWithTooltip = Slider.createSliderWithTooltip;
 const Range = createSliderWithTooltip(Slider.Range);
@@ -49,8 +50,8 @@ class AppBar extends React.Component {
       <React.Fragment>
           <div className={'appBar'}>
               <div>
-                  <div className={'appBarTitle'}>World Database on Protected Areas | Diff Checker</div>
-                  <div className={'appBarContent'}>
+                  <div className={'appBarTitle noselect'}>WDPA Version Checker</div>
+                  <div className={'appBarContent noselect'}>
                       <div className={"sliderContainer"}>
                           <div style={{ width: width, margin: 'auto' }}>
                            <Range 
@@ -72,28 +73,20 @@ class AppBar extends React.Component {
                       </div>*/}
                       <div className={'statsHolder'}>
                         <div className={'globalStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
-                          <div><Status status={'total'}/> {this.props.globalTotal}</div>
+                          <div><Status status={'total'} amount={this.props.globalTotal}/></div>
                         </div>
                         <div className={'globalDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
-                          <Status status={'total'}/>{this.props.globalDiff&&this.props.globalDiff.total.toLocaleString()}
-                          <Status status={'added'}/>{this.props.globalDiff&&this.props.globalDiff.added.toLocaleString()}
-                          <Status status={'removed'}/>{this.props.globalDiff&&this.props.globalDiff.removed.toLocaleString()}
-                          <Status status={'changed'}/>{this.props.globalDiff&&this.props.globalDiff.changed.toLocaleString()}
-                          <Status status={'no_change'}/>{this.props.globalDiff&&this.props.globalDiff.no_change.toLocaleString()}
+                          <StatsBar values={this.props.globalStats} showStatuses={this.props.showStatuses}/>
                         </div>
-                        <div className={'countryStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
+                        <div className={'countryStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>
                           <span>{this.props.country && this.props.country.name}</span>
-                          <Status status={'total'}/> {this.props.country && this.props.country.total}
+                          <Status status={'total'} amount={this.props.countryTotal}/>
                         </div>
-                        <div className={'countryDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
+                        <div className={'countryDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>
                           <span>{this.props.country && this.props.country.name}</span>
-                          <Status status={'total'}/>{this.props.country&&this.props.country.total.toLocaleString()}
-                          <Status status={'added'}/>{this.props.country&&this.props.country.added.toLocaleString()}
-                          <Status status={'removed'}/>{this.props.country&&this.props.country.removed.toLocaleString()}
-                          <Status status={'changed'}/>{this.props.country&&this.props.country.changed.toLocaleString()}
-                          <Status status={'no_change'}/>{this.props.country&&this.props.country.no_change.toLocaleString()}
+                          <StatsBar values={this.props.countryStats} showStatuses={this.props.showStatuses}/>
                         </div>
-          	            <img src={fuzzy} alt="Loading" title={"Loading"} style={{display: (this.props.gettingGlobalStats ? 'inline' : 'none')}}/>
+          	            <img src={fuzzy} alt="Loading" title={"Loading"} style={{display: (((this.props.gettingGlobalStats)||(this.props.gettingCountryStats)) ? 'inline' : 'none')}}/>
                       </div>
                   </div>
               </div>

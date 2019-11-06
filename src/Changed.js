@@ -10,6 +10,7 @@ class Changed extends React.Component {
 		return <div title={row.original.current}>{row.original.current}</div>;        
 	}
 	render() {
+		if (this.props.changedData === {}) return;
 		let status = this.props.statuses.find(item => {return (this.props.changedData.geometryData === item.key)});
 		return (
 		    (this.props.changedData && ((this.props.changedData.attributesData && this.props.changedData.attributesData.length>0) || (this.props.changedData.geometryData))) ?

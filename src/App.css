@@ -100,15 +100,15 @@
   padding: 0px 4px;
 }
 
+.statusDiv{
+  display:inline;
+}
 .stat {
-  padding-left: 10px;
-  padding-right: 1px;
   font-size:10px;
 }
 
 .total{
-  padding-right: 3px;
-  font-size:10px;
+  color:darkgray;
 }
 .added {
   color: rgb(63, 127, 191);
@@ -142,7 +142,7 @@
 }
 
 .wdpaPopup table td {
-  padding: 2px 4px;
+  padding: 2px;
 }
 
 .PAPopup {
@@ -255,7 +255,25 @@
   cursor: grabbing;
 }
 .statsHolder{
-  text-align: center;
+  margin:12px;
   font-size:12px;
   height:17px;
+}
+
+.statsBar{
+  display:inline;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  /* iOS Safari */
+  -webkit-user-select: none;
+  /* Safari */
+  -khtml-user-select: none;
+  /* Konqueror HTML */
+  -moz-user-select: none;
+  /* Firefox */
+  -ms-user-select: none;
+  /* Internet Explorer/Edge */
+  user-select: none;
+  /* Non-prefixed version, currently supported by Chrome and Opera */
 }

@@ -82,8 +82,13 @@ class MyMap extends React.Component {
         this.filterToVersionByCountries(iso3s);
       }      
     }else{
-      //render the country change maps
-      if (this.props.fromVersion.id !== this.props.toVersion.id) this.filterCountryLayers();
+      //see if anything has changed
+      if (this.props.country_summary !== prevProps.country_summary){
+        //render the country change maps
+        this.filterCountryLayers();
+        //remove the popups
+        this.removePopups();
+      }
     }
   }
   //adds the sources and layers for the from version
@@ -160,10 +165,15 @@ class MyMap extends React.Component {
       }
     });
   }
+  //removes any filter from the to points and to polygons layers
   unfilterNoChangeLayers(){
-    if (this.map && !this.map.isStyleLoaded()) return;
+    //get the no change status object
     let no_change_status = this.props.statuses.filter(status => status.key === 'no_change');
-    no_change_status[0].layers.forEach(layer => this.map.setFilter(layer, null));
+    //clear the filter depending on whether it is a global or country view
+    let filter = (this.props.view === 'global') ? null : ['in', 'iso3', this.props.country.iso3];
+    //iterate through the layers and set the filter
+    no_change_status[0].layers.forEach(layer => this.map.setFilter(layer, filter));
+    //
   }
   //adds a source to the map
   addSource(details){
@@ -195,6 +205,13 @@ class MyMap extends React.Component {
     }, (details.beforeId) ? details.beforeId : undefined);
     //set a filter if one is passed
     if (details.hasOwnProperty('filter')) this.map.setFilter(details.id, details.filter);
+    if (this.props.view === 'country'){
+      //set the visibility of the layer depending on the visible property of the status 
+      let status = this.props.statuses.filter(status => {
+        return (status.layers.indexOf(details.id) !== -1);
+      })[0];
+      if (status) this.map.setLayoutProperty(details.id, "visibility", (status.visible) ? "visible" : "none" );
+    }
   }
   clickCountryPopup(country){
     //set the currently selected country

@@ -11,9 +11,10 @@ class PAPopup extends React.Component {
 		let attributesData =[];
 		let props = feature.properties;
 		//check that the diff data has loaded
-		if (this.props.country_pa_diffs.length === 0) return;
+		if (this.props.country_pa_diffs.length === 0) return {};
 		//get the data for the feature under the mouse
 		let pa_data = this.props.country_pa_diffs.find(pa => pa.wdpa_pid === props.wdpa_pid); 
+		if (pa_data === undefined) return
 		//get the previous version of the feature either from the points layer of the polygons layer
 		let previous_feature;
 		if (pa_data.geometry_change && pa_data.geometry_change === "point to polygon"){
@@ -27,7 +28,7 @@ class PAPopup extends React.Component {
 				if (previous_feature){
 					attributesData.push({attribute: attribute, previous: previous_feature.properties[attribute], current: props[attribute]});
 				}else{
-					attributesData.push({attribute: attribute, previous: 'unable to find feature', current: props[attribute]});
+					attributesData.push({attribute: attribute, previous: 'changed in ' + pa_data.from, current: props[attribute]});
 				}
 			});
 		}
@@ -62,7 +63,7 @@ class PAPopup extends React.Component {
 		return (
 			<div style={{'left': left,'top':top}} id="popup" className={'PAPopup'} onMouseEnter={this.props.onMouseEnterPAPopup} onMouseLeave={this.props.onMouseLeavePAPopup}>
 				<div className={'wdpaPopup'}>
-					<div className="paPopupName"><Status status={status}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
+					<div className="paPopupName"><Status status={status} iconOnly={true}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
 					<div className={'paPopupContent'}>
 						{children}
 					</div>

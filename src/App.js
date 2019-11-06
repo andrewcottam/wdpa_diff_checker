@@ -37,6 +37,8 @@ class App extends React.Component {
       global_summary: [],
       country_summary: [],
       country_pa_diffs: [],
+      globalStats: {},
+      countryStats: {},
       showStatuses: ['added','removed','changed','no_change'], 
       view: 'global',
       statuses: [
@@ -157,12 +159,22 @@ class App extends React.Component {
     this.setState({fromVersion: this.state.versions[_from] , toVersion: this.state.versions[_to]});
     //if from and to are the same then get the global totals
     if (_from === _to) {
-      this.getGlobalTotal(_to);
+      if (this.state.view === 'global') this.getGlobalTotal(_to);
+      if (this.state.view === 'country') {
+        this.showUnchanged(); //the user may have unchecked the no_change status when looking at diffs so we need to reset it
+        //get the total count of PAs for the version
+        this.getCountryTotal(_to);
+      }
     }else{
-      //get the global totals for added, removed and changed
-      this.getGlobalDiffStats(_from, _to);
-      //get the country totals for added, removed and changed
-      this.getCountryDiffStats(_from, _to);
+      if (this.state.view === 'global'){
+        //get the global totals for added, removed and changed
+        this.getGlobalDiffStats(_from, _to);
+        //get the country totals for added, removed and changed
+        this.getCountriesDiffStats(_from, _to);
+      }else{
+        //get the country summary, stats and diffs
+        this.getCountryDiffs();
+      }
     }
   }
   handleKeyDown(e){
@@ -181,7 +193,15 @@ class App extends React.Component {
   //gets the global count of protected areas for the version
   getGlobalTotal(version){
     this._get(REST_BASE_URL + "get_global_total?version=" + version + "&format=json").then(response => {
-      this.setState({globalTotal: response.records[0].total.toLocaleString()});
+      this.setState({globalTotal: response.records[0].total});
+    });
+  }
+  //gets the country count of protected areas for the version
+  getCountryTotal(version){
+    this.setState({gettingCountryStats: true});
+    this._get(REST_BASE_URL + "get_country_total?version=" + version + "&iso3=" + this.state.country.iso3 + "&format=json").then(response => {
+      this.setState({countryTotal: response.records[0].total});
+      this.setState({gettingCountryStats: false});
     });
   }
   //gets the global stats for added, removed and changed for the versions
@@ -189,16 +209,16 @@ class App extends React.Component {
     this.setState({gettingGlobalStats: true});
     let restUrl = (_to - _from === 1) ? "get_global_stats?version=" + _to + "&format=json" : "get_global_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
     this._get(REST_BASE_URL + restUrl).then(response => {
-      this.setState({globalDiff: response.records[0], gettingGlobalStats: false});
+      this.setState({globalStats: response.records[0], gettingGlobalStats: false});
     });
   }
-  //gets the country stats for added, removed and changed for the versions
-  getCountryDiffStats(_from, _to){
+  //gets the countries stats for added, removed and changed for the versions
+  getCountriesDiffStats(_from, _to){
     let countryData;
     //get the country reference data from the cached geojson data
     let centroids = JSON.parse(JSON.stringify(geojson));
     //get the country statistics
-    let restUrl = (_to - _from === 1) ? "get_country_stats?version=" + _to + "&format=json" : "get_country_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
+    let restUrl = (_to - _from === 1) ? "get_countries_stats?version=" + _to + "&format=json" : "get_countries_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
     this._get(REST_BASE_URL + restUrl).then(response => {
       let global_summary_all = response.records.map(country => {
         //find the matching item from the countries.json array
@@ -251,6 +271,11 @@ class App extends React.Component {
     });
     this.setState({statuses: _statuses});
   }
+  //manually show the no_change status layers if they are currently not visible
+  showUnchanged(){
+    let no_change_status = this.state.statuses.filter(status => status.key === 'no_change')[0];
+    if (!no_change_status.visible) this.handleStatusChange(no_change_status);
+  }
   handleStatusChange(e){
     let _statuses = this.state.statuses;
     _statuses = _statuses.map(status => {
@@ -264,22 +289,30 @@ class App extends React.Component {
   }
   //fired when the user clicks on a country popup
   clickCountryPopup(country) {
-    //set the country
-    this.setCountry(country);
-  }
-  setCountry(country){
     //set the bounds of the map
     this.map.fitBounds([[country.west, country.south],[country.east,country.north]],{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
+    this.setState({country: country}, () => {
+      //get the country diffs
+      this.getCountryDiffs();
+    });
+  }
+  getCountryDiffs(){
     //hide the country popups and set the view type
-    this.setState({global_summary:[], view: "country", country: country, diff: country}, () => {
-      let restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_summary?version=" + this.state.toVersion.id : "get_country_summary2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
+    this.setState({global_summary:[], view: "country"}, () => {
+      //get the country stats
+      let restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_stats?version=" + this.state.toVersion.id : "get_country_stats2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
+      this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3).then(response => {
+        this.setState({countryStats: response.records[0]});
+      });
+      restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_summary?version=" + this.state.toVersion.id : "get_country_summary2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
       this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3).then(response => {
         //set the visibility of the statuses in the statuses array
         this.setStatusPresence(response.records, this.state.country.iso3);
         this.setState({country_summary: response.records});
       });
       //get the individual changes in the protected areas
-      this._get(REST_BASE_URL + "get_country_diffs?version=" + this.state.toVersion.id + "&format=json&iso3=" + country.iso3).then(response => {
+      restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_diffs?version=" + this.state.toVersion.id : "get_country_diffs2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
+      this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3).then(response => {
         if (response.records.length>0) this.setState({country_pa_diffs: response.records});
       });
     });
@@ -477,12 +510,15 @@ class App extends React.Component {
           onChange={this.onChange.bind(this)} 
           values={this.state.sliderValues} 
           zoomOutMap={this.zoomOutMap.bind(this)} 
+          showStatuses={this.state.showStatuses}
           globalTotal={this.state.globalTotal} 
-          globalDiff={this.state.globalDiff} 
-          diff={this.state.diff} 
+          globalStats={this.state.globalStats} 
+          countryTotal={this.state.countryTotal}
+          countryStats={this.state.countryStats}
           country={this.state.country}
           view={this.state.view}
           gettingGlobalStats={this.state.gettingGlobalStats}
+          gettingCountryStats={this.state.gettingCountryStats}
         />
         <PAPopupList 
           dataForPopupList={this.state.dataForPopupList} 
