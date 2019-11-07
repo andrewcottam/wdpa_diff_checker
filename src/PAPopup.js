@@ -63,7 +63,7 @@ class PAPopup extends React.Component {
 		return (
 			<div style={{'left': left,'top':top}} id="popup" className={'PAPopup'} onMouseEnter={this.props.onMouseEnterPAPopup} onMouseLeave={this.props.onMouseLeavePAPopup}>
 				<div className={'wdpaPopup'}>
-					<div className="paPopupName"><Status status={status} iconOnly={true}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
+					<div className="paPopupName"><Status status={status} iconOnly={true} rightPadding={3}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
 					<div className={'paPopupContent'}>
 						{children}
 					</div>

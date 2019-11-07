@@ -8,25 +8,41 @@
   border-radius: 4px !important;
   border: 1px solid lightgray;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3) !important;
+  background-color: white;
 }
 
 .appBarPaper {}
 
 .appBarTitle {
-  padding: 7px;
+  padding: 9px;
   background-color: aliceblue;
   border-bottom: 1px solid lightgray;
 }
 
 .appBarContent {
-  padding: 10px;
   font-size: 14px;
   background-color: white;
 }
 
+.trends {
+  position: fixed;
+  left: 50%;
+  display: flex;
+  top: 150px;
+  transform: translate(-50%, 0px);
+  z-index: 100000;
+  border-radius: 4px !important;
+  border: 1px solid lightgray;
+  overflow: hidden;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3) !important;
+  background-color: white;
+  font-size: 12px;
+  padding: 15px;
+}
+
 .sliderContainer {
-  margin: 6px 30px 0px 30px;
+  margin: 16px 40px 4px 40px;
   height: 40px;
 }
 
@@ -74,7 +90,7 @@
   top: 0;
   bottom: 0;
   width: 100%;
-  height:100%;
+  height: 100%;
 }
 
 .mapboxgl-popup-content {
@@ -97,19 +113,19 @@
 }
 
 .countryPopup .stats {
-  padding: 0px 4px;
+  padding: 2px 4px;
 }
 
-.statusDiv{
-  display:inline;
+.statusDiv {
+  display: inline;
 }
+
 .stat {
-  font-size:10px;
+  font-size: 10px;
 }
 
-.total{
-  color:darkgray;
-}
+.total {}
+
 .added {
   color: rgb(63, 127, 191);
 }
@@ -119,10 +135,12 @@
 }
 
 .changed {
-  color:darkgray;
+  color: darkgray;
+  font-size: 8px;
 }
+
 .no_change {
-  color:darkgray;
+  color: darkgray;
 }
 
 #popup {
@@ -233,36 +251,49 @@
 
 .showChangesDiv {}
 
-.ZoomOutMap{
-  cursor:pointer;
-  display:inline;
+.ZoomOutMap {
+  cursor: pointer;
+  font-size: 15px !important;
+  padding-right: 10px;
+  padding-top: 4px;
+  color: gray;
 }
-.ZoomOutMapContainer{
+
+.zoomOutHolder {
+  vertical-align: middle;
 }
-.rc-slider-handle:focus{
-  box-shadow: 0 0 0 5px red; /*set !important to update */
-  box-shadow: 0 0 0 0px red !important; /*set !important to update */
+
+.rc-slider-handle:focus {
+  box-shadow: 0 0 0 5px red;
+  /*set !important to update */
+  box-shadow: 0 0 0 0px red !important;
+  /*set !important to update */
 }
-.rc-slider-dot-active{
+
+.rc-slider-dot-active {
   /*background-color: #96dbfa !important;*/
 }
-.rc-slider-handle:active{
-  
-}
-.activeSlider{
+
+.rc-slider-handle:active {}
+
+.activeSlider {
   border-color: red;
   box-shadow: 0 0 5px #57c5f7;
   cursor: grabbing;
 }
-.statsHolder{
-  margin:12px;
-  font-size:12px;
-  height:17px;
+
+.statsHolder {
+  padding: 8px 12px 10px 12px;
+  font-size: 12px;
+  border-top: 1px solid lightgray;
+  background-color: whitesmoke;
+  height: 20px;
 }
 
-.statsBar{
-  display:inline;
+.statsBar {
+  display: inline;
 }
+
 .noselect {
   -webkit-touch-callout: none;
   /* iOS Safari */
@@ -276,4 +307,63 @@
   /* Internet Explorer/Edge */
   user-select: none;
   /* Non-prefixed version, currently supported by Chrome and Opera */
+}
+
+.countryName {
+  font-size: 14px;
+  padding-right: 10px;
+  vertical-align: middle;
+}
+
+@-moz-keyframes spin {
+  from {
+    -moz-transform: rotate(0deg);
+  }
+  to {
+    -moz-transform: rotate(-360deg);
+  }
+}
+
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(-360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.spin {
+  -webkit-animation-name: spin;
+  -webkit-animation-duration: 1500ms;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-timing-function: linear;
+  -moz-animation-name: spin;
+  -moz-animation-duration: 1500ms;
+  -moz-animation-iteration-count: infinite;
+  -moz-animation-timing-function: linear;
+  -ms-animation-name: spin;
+  -ms-animation-duration: 1500ms;
+  -ms-animation-iteration-count: infinite;
+  -ms-animation-timing-function: linear;
+  -o-transition: rotate(3600deg);
+}
+
+.vMiddle {
+  vertical-align: middle;
+}
+
+.sparklineHolder {
+  vertical-align: middle;
+  right: 0px;
+  position: absolute;
 }

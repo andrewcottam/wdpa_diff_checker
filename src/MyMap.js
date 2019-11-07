@@ -44,6 +44,8 @@ class MyMap extends React.Component {
     this.mapLoadedEvent = undefined;
     //add the to sources and layers
     this.addToLayers();
+    //call the event in the app component
+    this.props.mapStyleLoaded();
   }
   componentDidUpdate(prevProps, prevState){
     if (this.mapLoadedEvent) return; //the maps style has not laded
@@ -93,7 +95,6 @@ class MyMap extends React.Component {
   }
   //adds the sources and layers for the from version
   addFromLayers(){
-    console.log("addFromLayers")
     let _from = this.props.fromVersion.key;
     //add the sources
     this.addSource({id: window.SRC_FROM_POLYGONS, source: {type: "vector", tiles: [ window.TILES_PREFIX + "wdpa_" + _from + "_polygons" + window.TILES_SUFFIX]}});
@@ -112,16 +113,15 @@ class MyMap extends React.Component {
   }
   //removes the sources and layers for the from version
   removeFromLayers(){
-    console.log("removeFromLayers")
     if (this.map.getSource(window.SRC_FROM_POLYGONS)) this.removeSource(window.SRC_FROM_POLYGONS);
     if (this.map.getSource(window.SRC_FROM_POINTS)) this.removeSource(window.SRC_FROM_POINTS);
   }
   //adds the sources and layers for the to version
   addToLayers(){
-    console.log("addToLayers")
     let _to = this.props.toVersion.key;
     //add the sources
-    this.addSource({id: window.SRC_TO_POLYGONS, source: {type: "vector", attribution: this.props.attribution, tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_polygons" + window.TILES_SUFFIX]}});
+    let attribution = "IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) " + this.props.toVersion.title + ", Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>";
+    this.addSource({id: window.SRC_TO_POLYGONS, source: {type: "vector", attribution: attribution, tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_polygons" + window.TILES_SUFFIX]}});
     this.addSource({id: window.SRC_TO_POINTS, source: {type: "vector", tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_points" + window.TILES_SUFFIX]}});
     //no change protected areas layers
     this.addLayer({id: window.LYR_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(99,148,69,0.3)"}, beforeID: window.LYR_TO_SELECTED_POLYGON});
@@ -135,7 +135,6 @@ class MyMap extends React.Component {
   }
   //adds the change layers in the to version
   addToChangeLayers(){
-    console.log("addToChangeLayers")
     let _to = this.props.toVersion.key;
     //attribute change in protected areas layers
     this.addLayer({id: window.LYR_TO_CHANGED_ATTRIBUTE, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(99,148,69,0.4)", "fill-outline-color": "rgba(99,148,69,0.8)"}, filter:INITIAL_FILTER, beforeID: window.LYR_TO_SELECTED_POLYGON});
@@ -153,7 +152,6 @@ class MyMap extends React.Component {
   }
   //removes the change layers in the to version
   removeToChangeLayers(){
-    console.log("removeToChangeLayers")
     if (this.map && !this.map.isStyleLoaded()) return;
     this.props.statuses.forEach(status => {
       if (status.key !== 'no_change'){
@@ -268,8 +266,8 @@ class MyMap extends React.Component {
       toPolygonsFilter = ['all',['!in', 'wdpa_pid'].concat(changedPAs).concat(addedPAs).concat(geometryChangedPAs),['in', 'iso3', this.props.country.iso3]];
       //the toPoints layer should exclude all new point PAs (which will be shown in blue)
       toPointsFilter = ['all',['!in', 'wdpa_pid'].concat(addedPAs),['in', 'iso3', this.props.country.iso3]];        
-      //the changed layer should exclude all of the other protected areas that have had their geometry changed - these will be rendered with dashed outlines
-      changedPAs = changedPAs.filter(item => !geometryChangedPAs.includes(item));
+      //the changed layer should exclude all of the other protected areas that have had their geometry changed - these will be rendered with dashed outlines - I have changed this to show both now
+      // changedPAs = changedPAs.filter(item => !geometryChangedPAs.includes(item));
       //set the filters on the individual layers
       if (this.props.fromVersion) { //we are showing changes
         this.map.setFilter(window.LYR_FROM_DELETED_POLYGON,['in', 'wdpa_pid'].concat(removedPAs));

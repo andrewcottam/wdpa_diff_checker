@@ -29,9 +29,10 @@ class Status extends React.Component {
 	        default:
 	            // code
 	    }
-	    let amountSpan = (this.props.iconOnly) ? null : <span>{amount}</span>;
+	    let amountSpan = (this.props.iconOnly) ? null : <span style={{fontSize: (this.props.status === 'total') ? '14px' : '10px', paddingLeft: (this.props.status === 'total') ? '2px' : '0px'}}>{amount}</span>;
 		return (
-		    <div className={'statusDiv'} title={(this.props.amount === undefined) ? this.props.status : title} style={{display:((this.props.amount>0)||(this.props.amount === undefined && this.props.iconOnly)) ? "inline" : "none"}}><span className={classname} style={{display: (this.props.hide) ? "none" : "inline"}}>{text}</span>{amountSpan}</div>
+		    <div className={'statusDiv'} title={(this.props.amount === undefined) ? this.props.status : title} style={{display:((this.props.amount>0)||(this.props.amount === undefined && this.props.iconOnly)) ? "inline" : "none"}}>
+		    <span className={classname} style={{display: (this.props.hide) ? "none" : "inline", paddingRight: (this.props.rightPadding) ? this.props.rightPadding + 'px' : '0px'}}>{text}</span>{amountSpan}</div>
 		);
 	}
 }

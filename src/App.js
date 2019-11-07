@@ -1,5 +1,4 @@
 /*global fetch*/
-/*global URLSearchParams*/
 import React from 'react';
 import './App.css';
 import jsonp from 'jsonp-promise';
@@ -10,6 +9,7 @@ import PAPopupList from './PAPopupList.js';
 import parse from 'color-parse';
 import AppBar from './AppBar.js';
 import FooterBar from './FooterBar.js';
+import Trends from './Trends.js';
 import dateFormat from 'dateformat';
 
 const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
@@ -41,6 +41,8 @@ class App extends React.Component {
       countryStats: {},
       showStatuses: ['added','removed','changed','no_change'], 
       view: 'global',
+      showTrends: false,
+      global_trends: [],
       statuses: [
         {key:"added", text:"Added", short_text:"Added", present: false, visible: true, layers:[window.LYR_TO_NEW_POLYGON, window.LYR_TO_NEW_POINT]},
         {key:"removed", text:"Removed", short_text:"Removed", present: false, visible: true, layers:[window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT]},
@@ -77,6 +79,9 @@ class App extends React.Component {
     //remove event listeners
     document.removeEventListener("keydown", this.keyDownEventListener);
     document.removeEventListener("keyup", this.keyUpEventListener);
+  }
+  mapStyleLoaded(){
+    this.initialBounds = this.map.getBounds();
   }
   //gets all the available versions of the WDPA from the first month we have data available
   getVersions(){
@@ -180,6 +185,8 @@ class App extends React.Component {
   handleKeyDown(e){
     //if the Shift key is pressed then shiftDown property
     if ((e.keyCode === 16) && (!(this.shiftDown))) this.shiftDown = true;
+    if (e.keyCode === 37) this.setSliderValues(([0,1])); //left arrow key
+    if (e.keyCode === 39) this.setSliderValues(([2,3])); //right arrow key
   }
   handleKeyUp(e){
     this.shiftDown = false;
@@ -241,8 +248,17 @@ class App extends React.Component {
     return (this.state.showStatuses.indexOf(status)!==-1)&&(country[status] > 0); 
   }
   zoomOutMap(){
+    //zoom to the full extent
     this.map.fitBounds(this.initialBounds,{ padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 }});
-    this.showCountryPopups();
+    //set the view back to global
+    this.setState({view: 'global'});
+    this.getCountriesDiffStats(this.state.fromVersion.id,this.state.toVersion.id);
+  }
+  showTrends(){
+    this.setState({showTrends: !this.state.showTrends});
+    this._get(REST_BASE_URL + "get_global_trends?format=json").then(response => {
+      this.setState({global_trends: response.records});
+    });
   }
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
   _get(url, params) {
@@ -492,17 +508,17 @@ class App extends React.Component {
     return (
       <React.Fragment>
         <MyMap 
+          setMap={this.mapReady.bind(this)}
+          mapStyleLoaded={this.mapStyleLoaded.bind(this)}
           fromVersion={this.state.fromVersion} 
           toVersion={this.state.toVersion}
           global_summary={this.state.global_summary}
           country_summary={this.state.country_summary}
           country={this.state.country}
-          setMap={this.mapReady.bind(this)}
           showStatuses={this.state.showStatuses}
           statuses={this.state.statuses}
           clickCountryPopup={this.clickCountryPopup.bind(this)}
           view={this.state.view}
-          attribution={"IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) August, 2019, Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>"}
         />
         <AppBar 
           versions={this.state.versions} 
@@ -510,6 +526,7 @@ class App extends React.Component {
           onChange={this.onChange.bind(this)} 
           values={this.state.sliderValues} 
           zoomOutMap={this.zoomOutMap.bind(this)} 
+          showTrends={this.showTrends.bind(this)}
           showStatuses={this.state.showStatuses}
           globalTotal={this.state.globalTotal} 
           globalStats={this.state.globalStats} 
@@ -520,6 +537,7 @@ class App extends React.Component {
           gettingGlobalStats={this.state.gettingGlobalStats}
           gettingCountryStats={this.state.gettingCountryStats}
         />
+        <Trends showTrends={this.state.showTrends} global_trends={this.state.global_trends}/>
         <PAPopupList 
           dataForPopupList={this.state.dataForPopupList} 
           country_pa_diffs={this.state.country_pa_diffs} 

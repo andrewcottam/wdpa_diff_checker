@@ -1,34 +1,22 @@
 import React from 'react';
 import 'rc-slider/assets/index.css';
 import 'rc-tooltip/assets/bootstrap.css';
-import ZoomOutMap from '@material-ui/icons/ZoomOutMap';
 import Status from './Status.js';
 import Slider from 'rc-slider';
-import Tooltip from 'rc-tooltip';
-import fuzzy from './fuzzy.png';
 import StatsBar from './StatsBar.js';
+import SyncIcon from '@material-ui/icons/Sync';
+import ZoomOutMap from '@material-ui/icons/Public';
+import TimelineIcon from '@material-ui/icons/Timeline';
 
 const createSliderWithTooltip = Slider.createSliderWithTooltip;
 const Range = createSliderWithTooltip(Slider.Range);
-const Handle = Slider.Handle;
 
-const handle = (props) => {
-  const { value, dragging, index, ...restProps } = props;
-  return (
-    <Tooltip
-      prefixCls="rc-slider-tooltip"
-      overlay={value}
-      visible={dragging}
-      placement="top"
-      key={index}
-    >
-      <Handle value={value} {...restProps} />
-    </Tooltip>
-  );
-};
 class AppBar extends React.Component {
   zoomOutMap() {
     this.props.zoomOutMap();
+  }
+  showTrends(){
+    this.props.showTrends();
   }
   onBeforeChange(values) {
     this.props.onBeforeChange(values);
@@ -68,25 +56,30 @@ class AppBar extends React.Component {
                           />
                           </div>
                       </div>
-                      {/*<div className={'ZoomOutMapContainer'}>
-                          <ZoomOutMap titleAccess={"Return to full extent"} className={'ZoomOutMap'} onClick={this.zoomOutMap.bind(this)}/>
-                      </div>*/}
                       <div className={'statsHolder'}>
-                        <div className={'globalStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
-                          <div><Status status={'total'} amount={this.props.globalTotal}/></div>
-                        </div>
-                        <div className={'globalDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
+                        <span className={'zoomOutHolder'}>
+                          <ZoomOutMap titleAccess={"Return to full extent"} className={'ZoomOutMap'} onClick={this.zoomOutMap.bind(this)}/>
+                        </span>
+                        <span className={'countryName'} style={{display: ((this.props.view === 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>Global</span>
+                        <span className={'vMiddle'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
+                          <span><Status status={'total'} amount={this.props.globalTotal}/></span>
+                        </span>
+                        <span className={'vMiddle'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view === 'global') && (this.props.gettingGlobalStats === false)) ? "inline" : "none"}}>
                           <StatsBar values={this.props.globalStats} showStatuses={this.props.showStatuses}/>
-                        </div>
-                        <div className={'countryStats'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>
-                          <span>{this.props.country && this.props.country.name}</span>
+                        </span>
+                        <span className={'countryName'} style={{display: ((this.props.view !== 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>{this.props.country && this.props.country.name}</span>
+                        <span className={'vMiddle'} style={{display: ((this.props.values[0] === this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>
                           <Status status={'total'} amount={this.props.countryTotal}/>
-                        </div>
-                        <div className={'countryDiffStats'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>
-                          <span>{this.props.country && this.props.country.name}</span>
+                        </span>
+                        <span className={'vMiddle'} style={{display: ((this.props.values[0] !== this.props.values[1]) && (this.props.view !== 'global') && (this.props.gettingCountryStats === false)) ? "inline" : "none"}}>
                           <StatsBar values={this.props.countryStats} showStatuses={this.props.showStatuses}/>
-                        </div>
-          	            <img src={fuzzy} alt="Loading" title={"Loading"} style={{display: (((this.props.gettingGlobalStats)||(this.props.gettingCountryStats)) ? 'inline' : 'none')}}/>
+                        </span>
+                        <span className={'vMiddle'}>
+          	              <SyncIcon className={'spin'} style={{display: (((this.props.gettingGlobalStats)||(this.props.gettingCountryStats)) ? 'inline' : 'none'),color: 'rgb(255, 64, 129)', fontSize:'17px'}} key={"spinner"}/>
+          	            </span>
+                        <span className={'sparklineHolder'}>
+                          <TimelineIcon titleAccess={"View change over time"} className={'ZoomOutMap'} onClick={this.showTrends.bind(this)} style={{display: (this.props.view === 'global') ? "inline" : "none"}}/>
+                        </span>
                       </div>
                   </div>
               </div>
