@@ -18,6 +18,7 @@
   padding: 9px;
   background-color: aliceblue;
   border-bottom: 1px solid lightgray;
+  text-align:center;
 }
 
 .appBarContent {
@@ -62,6 +63,7 @@
   left: 50%;
   display: flex;
   bottom: 30px;
+  /*top:150px;*/
   border-radius: 4px !important;
   border: 1px solid lightgray;
   overflow: hidden;
@@ -74,13 +76,13 @@
 
 .footerBarTitle {
   background-color: aliceblue;
-  padding: 7px;
+  padding: 10px 7px 7px 7px;
   border-right: 1px solid lightgray;
   text-align: center;
 }
 
 .footerBarContent {
-  padding: 10px;
+  padding: 7px;
   font-size: 10px;
   background-color: white;
 }
@@ -258,7 +260,11 @@
   padding-top: 4px;
   color: gray;
 }
-
+.viewTrends{
+  cursor: pointer;
+  font-size: 15px !important;
+  color: gray;
+}
 .zoomOutHolder {
   vertical-align: middle;
 }
@@ -288,6 +294,7 @@
   border-top: 1px solid lightgray;
   background-color: whitesmoke;
   height: 20px;
+  text-align:center;
 }
 
 .statsBar {
@@ -363,7 +370,10 @@
 }
 
 .sparklineHolder {
-  vertical-align: middle;
-  right: 0px;
+  right: 5px;
   position: absolute;
+  margin-top: 2px;
+}
+.statusImage{
+  vertical-align:middle;
 }

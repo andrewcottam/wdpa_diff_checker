@@ -8,7 +8,7 @@ const INITIAL_CENTER = [0, 0];
 const INITIAL_ZOOM = [2];
 const INITIAL_FILTER = ['==', 'wdpa_pid','-1'];
 //paint properties
-const CIRCLE_RADIUS_STOPS = {"stops": [[5, 1],[10, 5], [15, 8]]};
+const CIRCLE_RADIUS_STOPS = {"stops": [[5, 1],[10, 4], [15, 7]]};
 const P_TO_CHANGED_GEOMETRY = { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(0,0,0,0)"};
 const P_TO_CHANGED_GEOMETRY_LINE = { "line-color": "rgb(99,148,69)", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [3,3]};
 const P_SELECTED_POINT = {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(0,0,0)", "circle-opacity": 0};

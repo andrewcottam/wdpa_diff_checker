@@ -7,7 +7,7 @@ import StatsBar from './StatsBar.js';
 import SyncIcon from '@material-ui/icons/Sync';
 import ZoomOutMap from '@material-ui/icons/Public';
 import TimelineIcon from '@material-ui/icons/Timeline';
-
+import IconButton from '@material-ui/core/IconButton';
 const createSliderWithTooltip = Slider.createSliderWithTooltip;
 const Range = createSliderWithTooltip(Slider.Range);
 
@@ -38,9 +38,9 @@ class AppBar extends React.Component {
       <React.Fragment>
           <div className={'appBar'}>
               <div>
-                  <div className={'appBarTitle noselect'}>WDPA Version Checker</div>
+                  <div className={'appBarTitle noselect'}>WDPA Diff Checker</div>
                   <div className={'appBarContent noselect'}>
-                      <div className={"sliderContainer"}>
+                      <div className={"sliderContainer"} title={'Press and hold SHIFT to move both at the same time'}>
                           <div style={{ width: width, margin: 'auto' }}>
                            <Range 
                               max={divisions}
@@ -78,7 +78,9 @@ class AppBar extends React.Component {
           	              <SyncIcon className={'spin'} style={{display: (((this.props.gettingGlobalStats)||(this.props.gettingCountryStats)) ? 'inline' : 'none'),color: 'rgb(255, 64, 129)', fontSize:'17px'}} key={"spinner"}/>
           	            </span>
                         <span className={'sparklineHolder'}>
-                          <TimelineIcon titleAccess={"View change over time"} className={'ZoomOutMap'} onClick={this.showTrends.bind(this)} style={{display: (this.props.view === 'global') ? "inline" : "none"}}/>
+                          <IconButton aria-label="delete" size="small">
+                            <TimelineIcon titleAccess={"View change over time"} className={'viewTrends'} onClick={this.showTrends.bind(this)} style={{display: (this.props.view === 'global') ? "inline" : "none"}}/>
+                          </IconButton>
                         </span>
                       </div>
                   </div>

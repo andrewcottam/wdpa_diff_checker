@@ -5,6 +5,7 @@
   "dependencies": {
     "@material-ui/core": "^4.5.0",
     "@material-ui/icons": "^4.5.1",
+    "@material-ui/lab": "^4.0.0-alpha.31",
     "color-parse": "^1.3.8",
     "dateformat": "^3.0.3",
     "jsonp-promise": "^0.1.2",

@@ -1,19 +1,17 @@
 import React from 'react';
-import { LineChart, Line,XAxis, YAxis } from 'recharts';
+import { LineChart, Line,XAxis, YAxis,Tooltip  } from 'recharts';
 
 class Trends extends React.Component {
-    renderCustomAxisTick(e) {
-      return (
-        <span>{this.props.global_trends[e.index].from}</span>
-      );
-    }
-    
-    render() {
+  tickFormatter(value){
+    return value.toLocaleString();
+  }
+  render() {
     const renderLineChart = (
-      <LineChart width={400} height={300} data={this.props.global_trends}>
+      <LineChart width={300} height={200} data={this.props.global_trends}>
         <Line type="monotone" dataKey="sum" stroke="#8884d8" />
-        <XAxis dataKey="version" tick={this.renderCustomAxisTick.bind(this)}/>
-        <YAxis />
+        <XAxis dataKey="shortTitle" label={{ value: "Version",  angle: 0,   dy: 15}}/>
+        <YAxis type="number" domain={['auto', 'auto']} tickFormatter={this.tickFormatter.bind(this)} label={{ value: "Count", angle: -90,   dx: -30}}/>
+        <Tooltip />
       </LineChart>
     );    
     return (
