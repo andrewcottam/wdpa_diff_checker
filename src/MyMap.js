@@ -5,7 +5,7 @@ import mapboxgl from 'mapbox-gl';
 
 // const INITIAL_CENTER = [-175.15, -21.15]; 
 const INITIAL_CENTER = [0, 0];
-const INITIAL_ZOOM = [2];
+const INITIAL_ZOOM = 2;
 const INITIAL_FILTER = ['==', 'wdpa_pid','-1'];
 //paint properties
 const CIRCLE_RADIUS_STOPS = {"stops": [[5, 1],[10, 4], [15, 7]]};
@@ -118,20 +118,24 @@ class MyMap extends React.Component {
   }
   //adds the sources and layers for the to version
   addToLayers(){
-    let _to = this.props.toVersion.key;
-    //add the sources
-    let attribution = "IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) " + this.props.toVersion.title + ", Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>";
-    this.addSource({id: window.SRC_TO_POLYGONS, source: {type: "vector", attribution: attribution, tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_polygons" + window.TILES_SUFFIX]}});
-    this.addSource({id: window.SRC_TO_POINTS, source: {type: "vector", tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_points" + window.TILES_SUFFIX]}});
-    //no change protected areas layers
-    this.addLayer({id: window.LYR_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(99,148,69,0.3)"}, beforeID: window.LYR_TO_SELECTED_POLYGON});
-    this.addLayer({id: window.LYR_TO_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(99,148,69)", "circle-opacity": 0.6}, beforeID: window.LYR_TO_SELECTED_POLYGON});
-    //selection layers
-    this.addLayer({id: window.LYR_TO_SELECTED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_POLYGON, filter:INITIAL_FILTER});
-    this.addLayer({id: window.LYR_TO_SELECTED_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_LINE, filter:INITIAL_FILTER});
-    this.addLayer({id: window.LYR_TO_SELECTED_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: P_SELECTED_POINT, filter:INITIAL_FILTER});
-    //add the change layers if needed
-    if (this.props.fromVersion.id !== this.props.toVersion.id) this.addToChangeLayers();
+    try {
+      let _to = this.props.toVersion.key;
+      //add the sources
+      let attribution = "IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) " + this.props.toVersion.title + ", Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>";
+      this.addSource({id: window.SRC_TO_POLYGONS, source: {type: "vector", attribution: attribution, tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_polygons" + window.TILES_SUFFIX]}});
+      this.addSource({id: window.SRC_TO_POINTS, source: {type: "vector", tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_points" + window.TILES_SUFFIX]}});
+      //no change protected areas layers
+      this.addLayer({id: window.LYR_TO_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: { "fill-color": "rgba(99,148,69,0.2)", "fill-outline-color": "rgba(99,148,69,0.3)"}, beforeID: window.LYR_TO_SELECTED_POLYGON});
+      this.addLayer({id: window.LYR_TO_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: {"circle-radius": CIRCLE_RADIUS_STOPS, "circle-color": "rgb(99,148,69)", "circle-opacity": 0.6}, beforeID: window.LYR_TO_SELECTED_POLYGON});
+      //selection layers
+      this.addLayer({id: window.LYR_TO_SELECTED_POLYGON, sourceId: window.SRC_TO_POLYGONS, type: "fill", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_POLYGON, filter:INITIAL_FILTER});
+      this.addLayer({id: window.LYR_TO_SELECTED_LINE, sourceId: window.SRC_TO_POLYGONS, type: "line", sourceLayer: "wdpa_" + _to + "_polygons", layout: {visibility: "visible"}, paint: P_SELECTED_LINE, filter:INITIAL_FILTER});
+      this.addLayer({id: window.LYR_TO_SELECTED_POINT, sourceId: window.SRC_TO_POINTS, type: "circle", sourceLayer: "wdpa_" + _to + "_points", layout: {visibility: "visible"}, paint: P_SELECTED_POINT, filter:INITIAL_FILTER});
+      //add the change layers if needed
+      if (this.props.fromVersion.id !== this.props.toVersion.id) this.addToChangeLayers();
+    } catch (e) {
+      console.log(e);
+    }
   }
   //adds the change layers in the to version
   addToChangeLayers(){

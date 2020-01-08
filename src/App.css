@@ -376,4 +376,5 @@
 }
 .statusImage{
   vertical-align:middle;
+      transform: scale(0.7);
 }
