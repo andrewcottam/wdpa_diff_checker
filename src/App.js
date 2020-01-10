@@ -86,9 +86,12 @@ class App extends React.Component {
   //gets all the available versions of the WDPA from the first month we have data available
   getVersions(){
     this.getDateArray().then((dateArray) =>{
+      console.log(dateArray);
+      //only get the dates with valid wmts calls
+      dateArray = dateArray.filter(item=>item.wmtsValid);
       //get the months and years between d1 and d2 (inclusive)
-      let versions = dateArray.map((_date, index) => {
-        return {id: index, title: dateFormat(_date, "mmmm yyyy"), shortTitle: dateFormat(_date, "mmm yy"), key: dateFormat(_date, "mmm_yyyy").toLowerCase()};
+      let versions = dateArray.map((item, index) => {
+        return {id: index, title: dateFormat(item._date, "mmmm yyyy"), shortTitle: dateFormat(item._date, "mmm yy"), key: dateFormat(item._date, "mmm_yyyy").toLowerCase()};
       });
       this.setState({versions: versions, sliderValues:[versions.length, versions.length]}, () => {
         this.setFromToVersions(versions.length - 1, versions.length - 1);  
@@ -101,21 +104,22 @@ class App extends React.Component {
       let d = new Date(2019,7,1);
       let today = new Date();
       let dateArray = [];
-      let validDates = [];
+      let callCount = 0;
       //iterate through the months until the date is greater than today
       do{
-        dateArray.push(new Date(d.getTime())); //clone the date
+        dateArray.push({_date: new Date(d.getTime()), wmtsValid: false}); //clone the date
         d = new Date(d.setMonth(d.getMonth()+1)); //increment the date by 1 month
       }
       while (d < today);
-      //iterate through the months and test the call to get the vector tiles
-      dateArray.forEach((_date, index) => {
-        let url = window.TILES_PREFIX + "wdpa_" + dateFormat(_date, "mmm_yyyy").toLowerCase() + "_polygons&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:2&TileCol=1&TileRow=1";
+      //iterate through the months and test the call to get the vector tiles - the test is a zoomed in area of morocco
+      dateArray.forEach((item, index) => {
+        let url = window.TILES_PREFIX + "wdpa_" + dateFormat(item._date, "mmm_yyyy").toLowerCase() + "_polygons&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:11&TileCol=986&TileRow=817";
         fetch(url).then(response => {
+          callCount = callCount + 1;
           //if the call succeeds then add the date
-          if (response.status !== 400) validDates.push(_date);
-          //if this is the last date then resolve the promise
-          if (index === dateArray.length -1) resolve(validDates);
+          if (response.status !== 400) item.wmtsValid = true;
+          //if all the calls have been made then resolve the promise
+          if (callCount === dateArray.length -1) resolve(dateArray);
         });
       });
     });
