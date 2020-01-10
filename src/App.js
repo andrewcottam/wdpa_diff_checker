@@ -119,7 +119,7 @@ class App extends React.Component {
           //if the call succeeds then add the date
           if (response.status !== 400) item.wmtsValid = true;
           //if all the calls have been made then resolve the promise
-          if (callCount === dateArray.length -1) resolve(dateArray);
+          if (callCount === dateArray.length) resolve(dateArray);
         });
       });
     });
