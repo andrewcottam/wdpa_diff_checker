@@ -10,7 +10,7 @@ class PAPopupList extends React.Component {
 		let top = this.props.dataForPopupList.point.y - 15 + 'px';
 		children = this.props.dataForPopupList.features.map((feature) => {
 			status = getFeatureStatus(feature);
-			return <tr className={'wdpaPopupListItem'} key={feature.properties.wdpa_pid} onMouseEnter={this.props.showPAPopup.bind(this, feature)}><td>{feature.properties.wdpa_pid}</td><td><Status status={status} iconOnly={true}/></td><td>{feature.properties.name} ({feature.properties.iucn_cat})</td></tr>;
+			return <tr className={'wdpaPopupListItem'} key={feature.properties.wdpa_pid} onMouseEnter={this.props.showPAPopup.bind(this, feature)}><td>{(status!=='removed') ? feature.properties.wdpa_pid : ''}</td><td><Status status={status} iconOnly={true}/></td><td>{feature.properties.name} ({feature.properties.iucn_cat})</td></tr>;
 		});
 		children = <table><tbody>{children}</tbody></table>;
 		return (
