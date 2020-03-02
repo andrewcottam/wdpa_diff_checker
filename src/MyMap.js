@@ -121,7 +121,7 @@ class MyMap extends React.Component {
     try {
       let _to = this.props.toVersion.key;
       //add the sources
-      let attribution = "IUCN and UNEP-WCMC (2019), The World Database on Protected Areas (WDPA) " + this.props.toVersion.title + ", Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>";
+      let attribution = "IUCN and UNEP-WCMC (" + this.props.toVersion.year + "), The World Database on Protected Areas (" + this.props.toVersion.year + ") " + this.props.toVersion.title + ", Cambridge, UK: UNEP-WCMC. Available at: <a href='http://www.protectedplanet.net'>www.protectedplanet.net</a>";
       this.addSource({id: window.SRC_TO_POLYGONS, source: {type: "vector", attribution: attribution, tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_polygons" + window.TILES_SUFFIX]}});
       this.addSource({id: window.SRC_TO_POINTS, source: {type: "vector", tiles: [ window.TILES_PREFIX + "wdpa_" + _to + "_points" + window.TILES_SUFFIX]}});
       //no change protected areas layers

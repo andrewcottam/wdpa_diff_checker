@@ -91,7 +91,7 @@ class App extends React.Component {
       dateArray = dateArray.filter(item=>item.wmtsValid);
       //get the months and years between d1 and d2 (inclusive)
       let versions = dateArray.map((item, index) => {
-        return {id: index, title: dateFormat(item._date, "mmmm yyyy"), shortTitle: dateFormat(item._date, "mmm yy"), key: dateFormat(item._date, "mmm_yyyy").toLowerCase()};
+        return {id: index, title: dateFormat(item._date, "mmmm yyyy"), shortTitle: dateFormat(item._date, "mmm yy"), key: dateFormat(item._date, "mmm_yyyy").toLowerCase(), year: dateFormat(item._date, "yyyy")};
       });
       this.setState({versions: versions, sliderValues:[versions.length, versions.length]}, () => {
         this.setFromToVersions(versions.length - 1, versions.length - 1);  
