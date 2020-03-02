@@ -55,7 +55,14 @@ class PAPopup extends React.Component {
 				link = <span className={"ppLink"}></span>;
 				break;
 			case "no_change":
-				children = <div className={'paPopupChangeType'}>No change</div>;
+				if (this.props.dataForPopup.showingChange){
+					children = <div className={'paPopupChangeType'}>No change</div>;
+				}else{
+					children = Object.keys(feature.properties).map(key=>{
+						return <tr><td>{key}</td><td>{feature.properties[key]}</td></tr>;
+					});
+					children = <table><tbody>{children}</tbody></table>;
+				}
 				break;
 			default:
 				//code
@@ -63,7 +70,7 @@ class PAPopup extends React.Component {
 		return (
 			<div style={{'left': left,'top':top}} id="popup" className={'PAPopup'} onMouseEnter={this.props.onMouseEnterPAPopup} onMouseLeave={this.props.onMouseLeavePAPopup}>
 				<div className={'wdpaPopup'}>
-					<div className="paPopupName"><Status status={status} iconOnly={true} rightPadding={3}/><span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
+					<div className="paPopupName">{(this.props.dataForPopup.showingChange) ? <Status status={status} iconOnly={true} rightPadding={3}/> : null }<span className={"paPopupNameLeft"}>{feature.properties.name}</span>{link}</div>
 					<div className={'paPopupContent'}>
 						{children}
 					</div>

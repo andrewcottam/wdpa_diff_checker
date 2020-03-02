@@ -378,3 +378,7 @@
   vertical-align:middle;
       transform: scale(0.7);
 }
+th{
+  text-align:left !important;
+  font-weight: 500 !important;
+}

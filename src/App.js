@@ -344,8 +344,10 @@ class App extends React.Component {
   }
   //gets the features under the cursor 
   mouseMove(e){
-    if ((this.state.view === 'global')||(this.state.sliderValues[0] === this.state.sliderValues[1])) return;
-    let queryLayers = [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT];
+    if (this.state.view === 'global') return; //dont show popups when at the global level
+    //get the layers to be queried
+    let showingChange = (this.state.sliderValues[0] !== this.state.sliderValues[1]);
+    let queryLayers = (showingChange) ? [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT,window.LYR_TO_POLYGON, window.LYR_TO_POINT,window.LYR_TO_CHANGED_ATTRIBUTE, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON,window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON,window.LYR_TO_GEOMETRY_SHIFTED_POLYGON,window.LYR_TO_NEW_POLYGON,window.LYR_TO_NEW_POINT] : [window.LYR_TO_POLYGON, window.LYR_TO_POINT];
     var features = this.map.queryRenderedFeatures(e.point,{layers: queryLayers});
     if (features.length>0) {
       //remove any duplicate features (at the boundary between vector tiles there may be duplicates so remove them)
@@ -354,7 +356,8 @@ class App extends React.Component {
       let wdpa_pids = features.map(feature => feature.properties.wdpa_pid);
       //compare the wdpas with the previous features under the mouse to see if there are any differences
       if (!this.arraysAreTheSame(wdpa_pids,this.wdpa_pidsUnderMouse)){
-        this.onMouseEnter({point: e.point, features: features});
+        //if the mouse has moved over 1 or more new features then show them
+        this.onMouseEnter({point: e.point, features: features, showingChange: showingChange});
         this.wdpa_pidsUnderMouse = wdpa_pids;
       }
     }else{
@@ -378,6 +381,7 @@ class App extends React.Component {
     //compare using a simple string conversion
     return (arr1.join("") === arr2.join("")) ? true : false;
   }
+  //mouse has entered one or more features
   onMouseEnter(e){
     if (this.state.view === 'global') return;
     //if only one feature - show the PAPopup
@@ -414,7 +418,7 @@ class App extends React.Component {
     this.setState({dataForPopupList:e});
   }
   showPAPopupFromList(feature,  e){
-    this.showPAPopup({features:[feature], point:{x: e.clientX + 50, y: e.clientY}});
+    this.showPAPopup({features:[feature], point:{x: e.clientX + 50, y: e.clientY}, showingChange: (this.state.sliderValues[0] !== this.state.sliderValues[1])});
   }
   closePAPopup(ms){
     //wait for a bit before closing the popup - the user may want to interact with it
@@ -492,7 +496,8 @@ class App extends React.Component {
   getPaintProperty(layerid){
     let style = this.map.getStyle();
     let layer = style.layers.find(layer => { return layer.id === layerid});
-    return layer.paint;
+    let paintProperty = (layer) ? layer.paint : {};
+    return paintProperty;
   }
 
   showAllNoChanges(_show){
