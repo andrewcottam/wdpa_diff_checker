@@ -34,6 +34,8 @@ class AppBar extends React.Component {
     this.props.versions.forEach(version => {
       this.marks[version.id] = version.shortTitle;
     });
+    let isMonthlyChange = ((this.props.toVersion&&this.props.toVersion.id) - (this.props.fromVersion&&this.props.fromVersion.id)) === 1;
+    let wcmcChangeLogUrl = 'https://www.protectedplanet.net/c/monthly-updates/' + (this.props.toVersion&&this.props.toVersion.year) + '/' + (this.props.toVersion&&this.props.toVersion.title.toLowerCase().replace(" ","-")) + '-update-of-the-wdpa';
     return (
       <React.Fragment>
           <div className={'appBar'}>
@@ -76,6 +78,9 @@ class AppBar extends React.Component {
                         </span>
                         <span className={'vMiddle'}>
           	              <SyncIcon className={'spin'} style={{display: (((this.props.gettingGlobalStats)||(this.props.gettingCountryStats)) ? 'inline' : 'none'),color: 'rgb(255, 64, 129)', fontSize:'17px'}} key={"spinner"}/>
+          	            </span>
+          	            <span className={'wcmcChangeLog'} style={{display: isMonthlyChange ? "inline" : "none"}}>
+          	              <a href={wcmcChangeLogUrl} rel="noopener noreferrer" title='Click to view the WCMC change log for this month' target='_blank'>WCMC change log</a>
           	            </span>
                         <span className={'sparklineHolder'}>
                           <IconButton aria-label="delete" size="small">

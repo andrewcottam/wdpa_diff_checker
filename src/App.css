@@ -18,7 +18,7 @@
   padding: 9px;
   background-color: aliceblue;
   border-bottom: 1px solid lightgray;
-  text-align:center;
+  text-align: center;
 }
 
 .appBarContent {
@@ -260,11 +260,13 @@
   padding-top: 4px;
   color: gray;
 }
-.viewTrends{
+
+.viewTrends {
   cursor: pointer;
   font-size: 15px !important;
   color: gray;
 }
+
 .zoomOutHolder {
   vertical-align: middle;
 }
@@ -294,7 +296,7 @@
   border-top: 1px solid lightgray;
   background-color: whitesmoke;
   height: 20px;
-  text-align:center;
+  text-align: center;
 }
 
 .statsBar {
@@ -374,11 +376,21 @@
   position: absolute;
   margin-top: 2px;
 }
-.statusImage{
-  vertical-align:middle;
-      transform: scale(0.7);
+
+.statusImage {
+  vertical-align: middle;
+  transform: scale(0.7);
 }
-th{
-  text-align:left !important;
+
+th {
+  text-align: left !important;
   font-weight: 500 !important;
+}
+
+.wcmcChangeLog {
+  display: inline;
+  font-size: 10px;
+  margin-top: 6px;
+  position: absolute;
+  left: 13px;
 }

@@ -536,6 +536,8 @@ class App extends React.Component {
         />
         <AppBar 
           versions={this.state.versions} 
+          fromVersion={this.state.fromVersion} 
+          toVersion={this.state.toVersion} 
           onBeforeChange={this.onBeforeChange.bind(this)} 
           onChange={this.onChange.bind(this)} 
           values={this.state.sliderValues} 
