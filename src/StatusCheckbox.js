@@ -42,7 +42,7 @@ class StatusCheckbox extends React.Component {
             <div className={'statusCheckboxContainer'}>
                 <img src={img} alt={this.props.status.text} title={this.props.status.text} className={"statusImage"}/>
                 <input className={'statusCheckbox'} id={this.props.status.key + 'id'} type="checkbox" checked={this.props.status.visible} onChange={this.handleStatusChange.bind(this)}/>
-                <label for={this.props.status.key + 'id'}>{this.props.status.short_text}</label>
+                <label for={this.props.status.key + 'id'}>{this.props.status.short_text}({this.props.status.count})</label>
             </div>
         );
     }

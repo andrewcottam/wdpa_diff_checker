@@ -283,15 +283,18 @@ class App extends React.Component {
   //iterates through the country summary data and sets a flag in the status array if they are visible
   setStatusPresence(records, iso3){
     let _statuses = this.state.statuses;
-    let _presences = records.map(item=>{return item.status});
+    //iteraten through the status array
     _statuses = _statuses.map(status => {
       if (status.key !== "no_change"){
-        return Object.assign(status, {present: _presences.indexOf(status.key) !== -1});
+        //get the matching country_status object
+        let filtered = records.filter(item=>{return item.status === status.key});
+        let country_status = (filtered.length) ? filtered[0] : {};
+        return Object.assign(status, {present: country_status.hasOwnProperty('status'), count: country_status.hasOwnProperty('wdpa_pids') && country_status.wdpa_pids.length});
       }else{
         //the no_change status is handled differently as we dont want to retrieve all wdpa_pids for a country which havent changed as this is lots of data, potentially, but we can get the no_change country statistics from the global summary
         let global_summary_data = this.global_summary_all.find(item => { return item.iso3 === iso3});
         let no_change_status = _statuses.find(item => item.key === 'no_change');
-        return Object.assign(no_change_status, {present: global_summary_data.no_change > 0});
+        return Object.assign(no_change_status, {present: global_summary_data.no_change > 0, count: this.state.countryStats.no_change});
       }
     });
     this.setState({statuses: _statuses});
