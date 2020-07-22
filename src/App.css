@@ -61,9 +61,7 @@
 .footerBar {
   position: fixed;
   left: 50%;
-  display: flex;
   bottom: 30px;
-  /*top:150px;*/
   border-radius: 4px !important;
   border: 1px solid lightgray;
   overflow: hidden;
@@ -72,19 +70,19 @@
 
 }
 
-.footerBarPaper {}
-
 .footerBarTitle {
   background-color: aliceblue;
-  padding: 10px 7px 7px 7px;
   border-right: 1px solid lightgray;
   text-align: center;
+  padding:8px;
+  font-size:15px;
 }
 
 .footerBarContent {
-  padding: 7px;
+  padding: 2px 5px;
   font-size: 10px;
   background-color: white;
+  white-space: nowrap;
 }
 
 .map {
@@ -237,8 +235,7 @@
 
 .statusCheckboxContainer {
   display: inline;
-  padding: 6px;
-  font-size: 12px;
+  padding: 4px;
 }
 
 .statusCheckbox {
@@ -400,4 +397,11 @@ th {
   right: 7px;
   font-size: 11px;
   color: gray;
+}
+.statusLabel{
+  font-size:11px;
+}
+.wdpaAttributeTable{
+  height:200px;
+  overflow: auto;
 }

@@ -14,8 +14,8 @@ class PAPopup extends React.Component {
 		if (this.props.country_pa_diffs.length === 0) return {};
 		//get the data for the feature under the mouse
 		let pa_data = this.props.country_pa_diffs.find(pa => pa.wdpa_pid === props.wdpa_pid); 
-		if (pa_data === undefined) return
-		//get the previous version of the feature either from the points layer of the polygons layer
+		if (pa_data === undefined) return;
+		//get the previous version of the feature either from the points layer or the polygons layer
 		let previous_feature;
 		if (pa_data.geometry_change && pa_data.geometry_change === "point to polygon"){
 			previous_feature = this.props.map.querySourceFeatures(window.SRC_FROM_POINTS, {sourceLayer: "wdpa_" + pa_data.from + "_points", filter: ["==", "wdpa_pid", props.wdpa_pid]})[0];
@@ -58,10 +58,11 @@ class PAPopup extends React.Component {
 				if (this.props.dataForPopup.showingChange){
 					children = <div className={'paPopupChangeType'}>No change</div>;
 				}else{
+					//show all of the protected area attributes
 					children = Object.keys(feature.properties).map(key=>{
 						return <tr><td>{key}</td><td>{feature.properties[key]}</td></tr>;
 					});
-					children = <table><tbody>{children}</tbody></table>;
+					children = <div className={'wdpaAttributeTable'}><table><tbody>{children}</tbody></table></div>;
 				}
 				break;
 			default:

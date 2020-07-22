@@ -47,10 +47,10 @@ class App extends React.Component {
       statuses: [
         { key: "added", text: "Added", short_text: "Added", present: false, visible: true, layers: [window.LYR_TO_NEW_POLYGON, window.LYR_TO_NEW_POINT] },
         { key: "removed", text: "Removed", short_text: "Removed", present: false, visible: true, layers: [window.LYR_FROM_DELETED_POLYGON, window.LYR_FROM_DELETED_POINT] },
-        { key: "changed", text: "One or more attributes have changed", short_text: "Attribute change", present: false, visible: true, layers: [window.LYR_TO_CHANGED_ATTRIBUTE] },
+        { key: "changed", text: "One or more attributes have changed", short_text: "Data change", present: false, visible: true, layers: [window.LYR_TO_CHANGED_ATTRIBUTE] },
         { key: "point_to_polygon", text: "The boundary has changed from a point to a polygon", short_text: "Point to polygon", present: false, visible: true, layers: [window.LYR_FROM_GEOMETRY_POINT_TO_POLYGON, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON, window.LYR_TO_GEOMETRY_POINT_TO_POLYGON_LINE] },
-        { key: "point_count_changed", text: "The boundary has changed", short_text: "Boundary change", present: false, visible: true, layers: [window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE, window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON, window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE] },
-        { key: "geometry_shifted", text: "The boundary has moved", short_text: "Boundary moved", present: false, visible: true, layers: [window.LYR_FROM_GEOMETRY_SHIFTED_LINE, window.LYR_TO_GEOMETRY_SHIFTED_POLYGON, window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE] },
+        { key: "point_count_changed", text: "The boundary has changed", short_text: "Shape change", present: false, visible: true, layers: [window.LYR_FROM_GEOMETRY_POINT_COUNT_CHANGED_LINE, window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON, window.LYR_TO_GEOMETRY_POINT_COUNT_CHANGED_POLYGON_LINE] },
+        { key: "geometry_shifted", text: "The boundary has moved", short_text: "Shape moved", present: false, visible: true, layers: [window.LYR_FROM_GEOMETRY_SHIFTED_LINE, window.LYR_TO_GEOMETRY_SHIFTED_POLYGON, window.LYR_TO_GEOMETRY_SHIFTED_POLYGON_LINE] },
         { key: "no_change", text: "No change", short_text: "No change", present: false, visible: true, layers: [window.LYR_TO_POLYGON, window.LYR_TO_POINT] },
       ],
       versions: [],

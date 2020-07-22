@@ -17,7 +17,7 @@ class Changed extends React.Component {
 		    <React.Fragment>
 		    	{(this.props.changedData.attributesData && this.props.changedData.attributesData.length>0) ? 
 		    	<React.Fragment>
-	    		    <div className={'paPopupChangeType'}>The attributes have changed:</div>
+	    		    <div className={'paPopupChangeType'}>The following attributes have changed:</div>
 	        		<ReactTable 
 	                    className={'changeTable'}
 	                    showPagination={false} 
