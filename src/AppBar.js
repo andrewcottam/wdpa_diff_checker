@@ -42,7 +42,7 @@ class AppBar extends React.Component {
               <div>
                   <div>
                     <div className={'appBarTitle noselect'}>WDPA Diff Checker</div>
-                    <div className='softwareVersion'>{this.props.softwareVersion}</div>
+                    <div className={'softwareVersion'}>{this.props.softwareVersion}</div>
                   </div>
                   <div className={'appBarContent noselect'}>
                       <div className={"sliderContainer"} title={'Press and hold SHIFT to move both at the same time'}>
