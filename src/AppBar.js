@@ -12,8 +12,8 @@ const createSliderWithTooltip = Slider.createSliderWithTooltip;
 const Range = createSliderWithTooltip(Slider.Range);
 
 class AppBar extends React.Component {
-  zoomOutMap() {
-    this.props.zoomOutMap();
+  async zoomOutMap() {
+    await this.props.zoomOutMap();
   }
   showTrends(){
     this.props.showTrends();

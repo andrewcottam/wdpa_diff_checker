@@ -74,21 +74,27 @@ class App extends React.Component {
     document.addEventListener("keydown", this.keyDownEventListener);
     this.keyUpEventListener = this.handleKeyUp.bind(this);
     document.addEventListener("keyup", this.keyUpEventListener);
-    //get the query parameters
-    var searchParams = new URLSearchParams(window.location.search);
-    //if a country is passed in the url search parameters then initialise the data for the app
-    if (searchParams.has("iso3")) {
-      this.getCountriesDiffStats(0, 1);
-    }
-    console.log(searchParams);
   }
   componentWillUnmount() {
     //remove event listeners
     document.removeEventListener("keydown", this.keyDownEventListener);
     document.removeEventListener("keyup", this.keyUpEventListener);
   }
-  mapStyleLoaded() {
+  async mapStyleLoaded() {
     this.initialBounds = this.map.getBounds();
+    //get the query parameters
+    var params = new URLSearchParams(window.location.search);
+    //if a country is passed in the url search parameters then initialise the data for the app
+    if (params.has("iso3")) {
+      //set the slider values
+      let _from = this.state.versions.filter(_version => _version.key === params.get('from'))[0]['id'];
+      let _to = this.state.versions.filter(_version => _version.key === params.get('to'))[0]['id'];
+      await this.setSliderValues([_from, _to]);
+      //get the country in the search params
+      let filtered = this.state.global_summary.filter(item => item.iso3 === params.get('iso3'));
+      //set the country
+      if (filtered.length) await this.clickCountryPopup(filtered[0]);
+    }
   }
   //gets all the available versions of the WDPA from the first month we have data available
   async getVersions() {
@@ -99,8 +105,8 @@ class App extends React.Component {
     let versions = dateArray.map((item, index) => {
       return { id: index, title: dateFormat(item._date, "mmmm yyyy"), shortTitle: dateFormat(item._date, "mmm yy"), key: dateFormat(item._date, "mmm_yyyy").toLowerCase(), year: dateFormat(item._date, "yyyy") };
     });
-    this.setState({ versions: versions, sliderValues: [versions.length, versions.length] }, () => {
-      this.setFromToVersions(versions.length - 1, versions.length - 1);
+    this.setState({ versions: versions, sliderValues: [versions.length, versions.length] }, async () => {
+      await this.setFromToVersions(versions.length - 1, versions.length - 1);
     });
   }
   async getDateArray() {
@@ -131,7 +137,7 @@ class App extends React.Component {
     this.prevMax = values[1];
     this.prevDiff = values[1] - values[0];
   }
-  onChange(values, marks) {
+  async onChange(values, marks) {
     let vals = Object.keys(marks);
     if (this.shiftDown) {
       //see if we are going up or down
@@ -151,52 +157,51 @@ class App extends React.Component {
         this.newMin = values[1] - this.prevDiff;
         this.newMax = values[1];
       }
-      this.setSliderValues([this.newMin, this.newMax]);
+      await this.setSliderValues([this.newMin, this.newMax]);
       this.prevMin = this.newMin;
       this.prevMax = this.newMax;
     }
     else {
-      this.setSliderValues(values);
+      await this.setSliderValues(values);
     }
   }
-  setSliderValues(values) {
+  async setSliderValues(values) {
     //set the slider values
     this.setState({ sliderValues: values });
     //set the from and to versions
-    this.setFromToVersions(values[0], values[1]);
+    await this.setFromToVersions(values[0], values[1]);
   }
   //sets the from and to versions
-  setFromToVersions(_from, _to) {
+  async setFromToVersions(_from, _to) {
     //check that the _from and _to are different - the onChange event on the slider is called repeatedly as it is moved
     if ((this.state.fromVersion && this.state.fromVersion.id === _from) && (this.state.toVersion && this.state.toVersion.id === _to)) return;
     this.setState({ fromVersion: this.state.versions[_from], toVersion: this.state.versions[_to] });
     //if from and to are the same then get the global totals
     if (_from === _to) {
-      if (this.state.view === 'global') this.getGlobalTotal(_to);
-      if (this.state.view === 'country') {
+      if (this.state.view === 'global') {
+        await this.getGlobalTotal(_to);
+      }else{
         this.showUnchanged(); //the user may have unchecked the no_change status when looking at diffs so we need to reset it
         //get the total count of PAs for the version
-        this.getCountryTotal(_to);
+        await this.getCountryTotal(_to);
       }
     }
     else {
       if (this.state.view === 'global') {
-        //get the global totals for added, removed and changed
-        this.getGlobalDiffStats(_from, _to);
-        //get the country totals for added, removed and changed
-        this.getCountriesDiffStats(_from, _to);
+        //get the global and country totals for added, removed and changed
+        await Promise.all([this.getGlobalDiffStats(_from, _to), this.getCountriesDiffStats(_from, _to)]);
       }
       else {
         //get the country summary, stats and diffs
-        this.getCountryDiffs();
+        await this.getCountryDiffs();
       }
     }
   }
-  handleKeyDown(e) {
+  async handleKeyDown(e) {
     //if the Shift key is pressed then shiftDown property
     if ((e.keyCode === 16) && (!(this.shiftDown))) this.shiftDown = true;
-    if (e.keyCode === 37) this.setSliderValues(([0, 1])); //left arrow key
-    if (e.keyCode === 39) this.setSliderValues(([2, 3])); //right arrow key
+    if (e.keyCode === 37) await this.setSliderValues(([0, 1])); //left arrow key
+    if (e.keyCode === 39) await this.setSliderValues(([2, 3])); //right arrow key
   }
   handleKeyUp(e) {
     this.shiftDown = false;
@@ -249,16 +254,36 @@ class App extends React.Component {
     //set the state - this creates the country popups on the map
     this.setState({ global_summary: visibleCountries });
   }
+  async getCountryDiffs() {
+    //hide the country popups and set the view type
+    this.setState({ global_summary: [], view: "country" }, async () => {
+      //get the difference in the months between the versions
+      let diff = (this.state.toVersion.id - this.state.fromVersion.id);
+      let _from = this.state.fromVersion.id;
+      let _to = this.state.toVersion.id;
+      let suf = "&format=json&iso3=" + this.state.country.iso3;
+      //get the country stats
+      let countryStats_url = (diff === 1) ? "get_country_stats?version=" + _to + suf : "get_country_stats2?fromversion=" + _from + "&toversion=" + _to + suf;
+      let country_summary_url = (diff === 1) ? "get_country_summary?version=" + _to + suf : "get_country_summary2?fromversion=" + _from + "&toversion=" + _to + suf;
+      let country_pa_diffs_url = (diff === 1) ? "get_country_diffs?version=" + _to + suf : "get_country_diffs2?fromversion=" + _from + "&toversion=" + _to + suf;
+      //make the calls for the country simultaneously
+      let [countryStats, country_summary, country_pa_diffs]  = await Promise.all([this._get(REST_BASE_URL + countryStats_url), this._get(REST_BASE_URL + country_summary_url), this._get(REST_BASE_URL + country_pa_diffs_url)]);
+      //set the state
+      this.setState({ countryStats: countryStats.records[0], country_summary: country_summary.records, country_pa_diffs: country_pa_diffs.records});
+      //set the visibility of the statuses in the statuses array
+      this.setStatusPresence(country_summary.records, this.state.country.iso3);
+    });
+  }
   //returns true if the country has protected areas with the passed status
   isCountryVisible(status, country) {
     return (this.state.showStatuses.indexOf(status) !== -1) && (country[status] > 0);
   }
-  zoomOutMap() {
+  async zoomOutMap() {
     //zoom to the full extent
     this.map.fitBounds(this.initialBounds, { padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 } });
     //set the view back to global
     this.setState({ view: 'global' });
-    this.getCountriesDiffStats(this.state.fromVersion.id, this.state.toVersion.id);
+    await this.getCountriesDiffStats(this.state.fromVersion.id, this.state.toVersion.id);
   }
   async showTrends() {
     this.setState({ showTrends: !this.state.showTrends });
@@ -312,33 +337,15 @@ class App extends React.Component {
     });
   }
   //fired when the user clicks on a country popup
-  clickCountryPopup(country) {
+  async clickCountryPopup(country) {
     //set the bounds of the map
     this.map.fitBounds([
       [country.west, country.south],
       [country.east, country.north]
     ], { padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 } });
-    this.setState({ country: country }, () => {
+    await this.setState({ country: country }, async () => {
       //get the country diffs
-      this.getCountryDiffs();
-    });
-  }
-  async getCountryDiffs() {
-    //hide the country popups and set the view type
-    this.setState({ global_summary: [], view: "country" }, async () => {
-      //get the country stats
-      let restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_stats?version=" + this.state.toVersion.id : "get_country_stats2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
-      let response = await this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3);
-      this.setState({ countryStats: response.records[0] });
-      restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_summary?version=" + this.state.toVersion.id : "get_country_summary2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
-      response = await this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3);
-      //set the visibility of the statuses in the statuses array
-      this.setStatusPresence(response.records, this.state.country.iso3);
-      this.setState({ country_summary: response.records });
-      //get the individual changes in the protected areas
-      restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_diffs?version=" + this.state.toVersion.id : "get_country_diffs2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
-      response = await this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3);
-      if (response.records.length > 0) this.setState({ country_pa_diffs: response.records });
+      await this.getCountryDiffs();
     });
   }
   //gets the features under the cursor 
