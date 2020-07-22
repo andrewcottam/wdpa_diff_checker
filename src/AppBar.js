@@ -83,8 +83,8 @@ class AppBar extends React.Component {
           	              <a href={wcmcChangeLogUrl} rel="noopener noreferrer" title='Click to view the WCMC change log for this month' target='_blank'>WCMC change log</a>
           	            </span>
                         <span className={'sparklineHolder'}>
-                          <IconButton aria-label="delete" size="small">
-                            <TimelineIcon titleAccess={"View change over time"} className={'viewTrends'} onClick={this.showTrends.bind(this)} style={{display: (this.props.view === 'global') ? "inline" : "none"}}/>
+                          <IconButton aria-label="delete" size="small" onClick={this.showTrends.bind(this)} >
+                            <TimelineIcon titleAccess={"View change over time"} className={'viewTrends'} style={{display: (this.props.view === 'global') ? "inline" : "none"}}/>
                           </IconButton>
                         </span>
                       </div>
