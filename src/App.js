@@ -2,7 +2,6 @@
 /*global URLSearchParams*/
 import React from 'react';
 import './App.css';
-import jsonp from 'jsonp-promise';
 import geojson from './countries.json';
 import MyMap from './MyMap.js';
 import PAPopup from './PAPopup.js';
@@ -209,50 +208,46 @@ class App extends React.Component {
     this.map.on("mousemove", this.mouseMove.bind(this));
   }
   //gets the global count of protected areas for the version
-  getGlobalTotal(version) {
-    this._get(REST_BASE_URL + "get_global_total?version=" + version + "&format=json").then(response => {
-      this.setState({ globalTotal: response.records[0].total });
-    });
+  async getGlobalTotal(version) {
+    let response = await this._get(REST_BASE_URL + "get_global_total?version=" + version + "&format=json");
+    this.setState({ globalTotal: response.records[0].total });
   }
   //gets the country count of protected areas for the version
-  getCountryTotal(version) {
+  async getCountryTotal(version) {
     this.setState({ gettingCountryStats: true });
-    this._get(REST_BASE_URL + "get_country_total?version=" + version + "&iso3=" + this.state.country.iso3 + "&format=json").then(response => {
-      this.setState({ countryTotal: response.records[0].total });
-      this.setState({ gettingCountryStats: false });
-    });
+    let response = await this._get(REST_BASE_URL + "get_country_total?version=" + version + "&iso3=" + this.state.country.iso3 + "&format=json");
+    this.setState({ countryTotal: response.records[0].total });
+    this.setState({ gettingCountryStats: false });
   }
   //gets the global stats for added, removed and changed for the versions
-  getGlobalDiffStats(_from, _to) {
+  async getGlobalDiffStats(_from, _to) {
     this.setState({ gettingGlobalStats: true });
     let restUrl = (_to - _from === 1) ? "get_global_stats?version=" + _to + "&format=json" : "get_global_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
-    this._get(REST_BASE_URL + restUrl).then(response => {
-      this.setState({ globalStats: response.records[0], gettingGlobalStats: false });
-    });
+    let response = await this._get(REST_BASE_URL + restUrl);
+    this.setState({ globalStats: response.records[0], gettingGlobalStats: false });
   }
   //gets the countries stats for added, removed and changed for the versions
-  getCountriesDiffStats(_from, _to) {
+  async getCountriesDiffStats(_from, _to) {
     let countryData;
     //get the country reference data from the cached geojson data
     let centroids = JSON.parse(JSON.stringify(geojson));
     //get the country statistics - there are 2 different REST services depending on whether there is 1 months difference (simple) or >1 month (not simple)
     let restUrl = (_to - _from === 1) ? "get_countries_stats?version=" + _to + "&format=json" : "get_countries_stats2?fromversion=" + _from + "&toversion=" + _to + "&format=json";
-    this._get(REST_BASE_URL + restUrl).then(response => {
-      let global_summary_all = response.records.map(country => {
-        //find the matching item from the countries.json array
-        countryData = centroids.features.find(feature => feature.properties.iso3 === country.iso3);
-        //merge the two objects
-        return (countryData) ? Object.assign(country, countryData.properties, { "centroid": countryData.geometry.coordinates }) : null;
-      });
-      //filter out the nulls
-      this.global_summary_all = global_summary_all.filter((item) => !(item === null));
-      //get the countries that are visible
-      let visibleCountries = this.global_summary_all.filter(country => {
-        return (this.isCountryVisible('added', country) || this.isCountryVisible('removed', country) || this.isCountryVisible('changed', country));
-      });
-      //set the state - this creates the country popups on the map
-      this.setState({ global_summary: visibleCountries });
+    let response = await this._get(REST_BASE_URL + restUrl);
+    let global_summary_all = response.records.map(country => {
+      //find the matching item from the countries.json array
+      countryData = centroids.features.find(feature => feature.properties.iso3 === country.iso3);
+      //merge the two objects
+      return (countryData) ? Object.assign(country, countryData.properties, { "centroid": countryData.geometry.coordinates }) : null;
     });
+    //filter out the nulls
+    this.global_summary_all = global_summary_all.filter((item) => !(item === null));
+    //get the countries that are visible
+    let visibleCountries = this.global_summary_all.filter(country => {
+      return (this.isCountryVisible('added', country) || this.isCountryVisible('removed', country) || this.isCountryVisible('changed', country));
+    });
+    //set the state - this creates the country popups on the map
+    this.setState({ global_summary: visibleCountries });
   }
   //returns true if the country has protected areas with the passed status
   isCountryVisible(status, country) {
@@ -265,27 +260,20 @@ class App extends React.Component {
     this.setState({ view: 'global' });
     this.getCountriesDiffStats(this.state.fromVersion.id, this.state.toVersion.id);
   }
-  showTrends() {
+  async showTrends() {
     this.setState({ showTrends: !this.state.showTrends });
-    this._get(REST_BASE_URL + "get_global_trends?format=json").then(response => {
-      //add the version short title
-      let global_trends = response.records.map(item => {
-        let version = this.state.versions.filter(_version => _version.key === item.from)[0];
-        return Object.assign(item, version);
-      });
-      this.setState({ global_trends: global_trends });
+    let response = await this._get(REST_BASE_URL + "get_global_trends?format=json");
+    //add the version short title
+    let global_trends = response.records.map(item => {
+      let version = this.state.versions.filter(_version => _version.key === item.from)[0];
+      return Object.assign(item, version);
     });
+    this.setState({ global_trends: global_trends });
   }
   //makes a GET request and returns a promise which will either be resolved (passing the response) or rejected (passing the error)
-  _get(url, params) {
-    return new Promise((resolve, reject) => {
-      //set the global loading flag
-      jsonp(url).promise.then((response) => {
-        resolve(response);
-      }, (err) => {
-        reject(err);
-      });
-    });
+  async _get(url, params) {
+    let response = await fetch(url);
+    return await response.json();
   }
   //iterates through the country summary data and sets a flag in the status array if they are visible
   setStatusPresence(records, iso3) {
@@ -335,25 +323,22 @@ class App extends React.Component {
       this.getCountryDiffs();
     });
   }
-  getCountryDiffs() {
+  async getCountryDiffs() {
     //hide the country popups and set the view type
-    this.setState({ global_summary: [], view: "country" }, () => {
+    this.setState({ global_summary: [], view: "country" }, async () => {
       //get the country stats
       let restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_stats?version=" + this.state.toVersion.id : "get_country_stats2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
-      this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3).then(response => {
-        this.setState({ countryStats: response.records[0] });
-      });
+      let response = await this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3);
+      this.setState({ countryStats: response.records[0] });
       restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_summary?version=" + this.state.toVersion.id : "get_country_summary2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
-      this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3).then(response => {
-        //set the visibility of the statuses in the statuses array
-        this.setStatusPresence(response.records, this.state.country.iso3);
-        this.setState({ country_summary: response.records });
-      });
+      response = await this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3);
+      //set the visibility of the statuses in the statuses array
+      this.setStatusPresence(response.records, this.state.country.iso3);
+      this.setState({ country_summary: response.records });
       //get the individual changes in the protected areas
       restUrl = (this.state.toVersion.id - this.state.fromVersion.id === 1) ? "get_country_diffs?version=" + this.state.toVersion.id : "get_country_diffs2?fromversion=" + this.state.fromVersion.id + "&toversion=" + this.state.toVersion.id;
-      this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3).then(response => {
-        if (response.records.length > 0) this.setState({ country_pa_diffs: response.records });
-      });
+      response = await this._get(REST_BASE_URL + restUrl + "&format=json&iso3=" + this.state.country.iso3);
+      if (response.records.length > 0) this.setState({ country_pa_diffs: response.records });
     });
   }
   //gets the features under the cursor 
