@@ -40,7 +40,10 @@ class AppBar extends React.Component {
       <React.Fragment>
           <div className={'appBar'}>
               <div>
-                  <div className={'appBarTitle noselect'}>WDPA Diff Checker</div>
+                  <div>
+                    <div className={'appBarTitle noselect'}>WDPA Diff Checker</div>
+                    <div className='softwareVersion'>{this.props.softwareVersion}</div>
+                  </div>
                   <div className={'appBarContent noselect'}>
                       <div className={"sliderContainer"} title={'Press and hold SHIFT to move both at the same time'}>
                           <div style={{ width: width, margin: 'auto' }}>

@@ -11,6 +11,7 @@ import AppBar from './AppBar.js';
 import FooterBar from './FooterBar.js';
 import Trends from './Trends.js';
 import dateFormat from 'dateformat';
+import packageJson from '../package.json';
 
 // const REST_BASE_URL = "https://61c92e42cb1042699911c485c38d52ae.vfs.cloud9.eu-west-1.amazonaws.com/python-rest-server/pythonrestserver/services/";
 const REST_BASE_URL = "https://rest-services.jrc.ec.europa.eu/services/marxan_vt/services/";
@@ -89,7 +90,7 @@ class App extends React.Component {
       //set the slider values
       let _from = this.state.versions.filter(_version => _version.key === params.get('from'))[0]['id'];
       let _to = this.state.versions.filter(_version => _version.key === params.get('to'))[0]['id'];
-      await this.setSliderValues([_from, _to]);
+      await this.setSliderValues([_from, _to], false);
       //get the country in the search params
       let filtered = this.state.global_summary.filter(item => item.iso3 === params.get('iso3'));
       //set the country
@@ -105,7 +106,7 @@ class App extends React.Component {
     let versions = dateArray.map((item, index) => {
       return { id: index, title: dateFormat(item._date, "mmmm yyyy"), shortTitle: dateFormat(item._date, "mmm yy"), key: dateFormat(item._date, "mmm_yyyy").toLowerCase(), year: dateFormat(item._date, "yyyy") };
     });
-    this.setState({ versions: versions, sliderValues: [versions.length, versions.length] }, async () => {
+    this.setState({ versions: versions, sliderValues: [versions.length, versions.length] }, async() => {
       await this.setFromToVersions(versions.length - 1, versions.length - 1);
     });
   }
@@ -122,7 +123,7 @@ class App extends React.Component {
     }
     while (d < today);
     //iterate through the months and test the call to get the vector tiles - the test is a zoomed in area of morocco
-    await Promise.all(dateArray.map(async (item, index) => {
+    await Promise.all(dateArray.map(async(item, index) => {
       let url = window.TILES_PREFIX + "wdpa_" + dateFormat(item._date, "mmm_yyyy").toLowerCase() + "_polygons&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/x-protobuf;type=mapbox-vector&TileMatrix=EPSG:900913:11&TileCol=986&TileRow=817";
       let response = await fetch(url);
       callCount = callCount + 1;
@@ -165,14 +166,23 @@ class App extends React.Component {
       await this.setSliderValues(values);
     }
   }
-  async setSliderValues(values) {
+  updateUrl() {
+    if (window.history.pushState) {
+      let pref = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      let suf = 'from=' + this.state.fromVersion.key + '&to=' + this.state.toVersion.key;
+      let newUrl = (this.state.country && this.state.country.iso3) ? pref + '?iso3=' + this.state.country.iso3 + '&' + suf : pref + '?' + suf;
+      window.history.pushState({ path: newUrl }, '', newUrl);
+    }
+  }
+  //set updateUrl to true to update the browser url adding the from and to parameters
+  async setSliderValues(values, updateUrl=true) {
     //set the slider values
     this.setState({ sliderValues: values });
     //set the from and to versions
-    await this.setFromToVersions(values[0], values[1]);
+    await this.setFromToVersions(values[0], values[1], updateUrl);
   }
   //sets the from and to versions
-  async setFromToVersions(_from, _to) {
+  async setFromToVersions(_from, _to, updateUrl=false) {
     //check that the _from and _to are different - the onChange event on the slider is called repeatedly as it is moved
     if ((this.state.fromVersion && this.state.fromVersion.id === _from) && (this.state.toVersion && this.state.toVersion.id === _to)) return;
     this.setState({ fromVersion: this.state.versions[_from], toVersion: this.state.versions[_to] });
@@ -180,7 +190,8 @@ class App extends React.Component {
     if (_from === _to) {
       if (this.state.view === 'global') {
         await this.getGlobalTotal(_to);
-      }else{
+      }
+      else {
         this.showUnchanged(); //the user may have unchecked the no_change status when looking at diffs so we need to reset it
         //get the total count of PAs for the version
         await this.getCountryTotal(_to);
@@ -196,6 +207,8 @@ class App extends React.Component {
         await this.getCountryDiffs();
       }
     }
+    //update the browser url
+    if (updateUrl) this.updateUrl();
   }
   async handleKeyDown(e) {
     //if the Shift key is pressed then shiftDown property
@@ -256,7 +269,7 @@ class App extends React.Component {
   }
   async getCountryDiffs() {
     //hide the country popups and set the view type
-    this.setState({ global_summary: [], view: "country" }, async () => {
+    this.setState({ global_summary: [], view: "country" }, async() => {
       //get the difference in the months between the versions
       let diff = (this.state.toVersion.id - this.state.fromVersion.id);
       let _from = this.state.fromVersion.id;
@@ -267,9 +280,9 @@ class App extends React.Component {
       let country_summary_url = (diff === 1) ? "get_country_summary?version=" + _to + suf : "get_country_summary2?fromversion=" + _from + "&toversion=" + _to + suf;
       let country_pa_diffs_url = (diff === 1) ? "get_country_diffs?version=" + _to + suf : "get_country_diffs2?fromversion=" + _from + "&toversion=" + _to + suf;
       //make the calls for the country simultaneously
-      let [countryStats, country_summary, country_pa_diffs]  = await Promise.all([this._get(REST_BASE_URL + countryStats_url), this._get(REST_BASE_URL + country_summary_url), this._get(REST_BASE_URL + country_pa_diffs_url)]);
+      let [countryStats, country_summary, country_pa_diffs] = await Promise.all([this._get(REST_BASE_URL + countryStats_url), this._get(REST_BASE_URL + country_summary_url), this._get(REST_BASE_URL + country_pa_diffs_url)]);
       //set the state
-      this.setState({ countryStats: countryStats.records[0], country_summary: country_summary.records, country_pa_diffs: country_pa_diffs.records});
+      this.setState({ countryStats: countryStats.records[0], country_summary: country_summary.records, country_pa_diffs: country_pa_diffs.records });
       //set the visibility of the statuses in the statuses array
       this.setStatusPresence(country_summary.records, this.state.country.iso3);
     });
@@ -282,7 +295,10 @@ class App extends React.Component {
     //zoom to the full extent
     this.map.fitBounds(this.initialBounds, { padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 } });
     //set the view back to global
-    this.setState({ view: 'global' });
+    this.setState({ view: 'global', country: undefined}, () => {
+      //update the browser url
+      this.updateUrl();
+    });
     await this.getCountriesDiffStats(this.state.fromVersion.id, this.state.toVersion.id);
   }
   async showTrends() {
@@ -343,10 +359,12 @@ class App extends React.Component {
       [country.west, country.south],
       [country.east, country.north]
     ], { padding: { top: 10, bottom: 10, left: 10, right: 10 }, easing: (num) => { return 1 } });
-    await this.setState({ country: country }, async () => {
+    await this.setState({ country: country }, async() => {
       //get the country diffs
       await this.getCountryDiffs();
     });
+    //update the browser url
+    this.updateUrl();
   }
   //gets the features under the cursor 
   mouseMove(e) {
@@ -545,6 +563,7 @@ class App extends React.Component {
           view={this.state.view}
         />
         <AppBar 
+          softwareVersion={packageJson.version}
           versions={this.state.versions} 
           fromVersion={this.state.fromVersion} 
           toVersion={this.state.toVersion} 
