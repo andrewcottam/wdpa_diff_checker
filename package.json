@@ -15,7 +15,7 @@
     "react-dom": "^16.13.1",
     "react-scripts": "^3.4.1",
     "react-table": "^6.11.5",
-    "recharts": "^1.8.5",
+    "recharts": "^2.1.14",
     "typeface-roboto": "0.0.75"
   },
   "scripts": {
