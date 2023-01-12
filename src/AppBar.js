@@ -35,7 +35,7 @@ class AppBar extends React.Component {
       this.marks[version.id] = version.shortTitle;
     });
     let isMonthlyChange = ((this.props.toVersion&&this.props.toVersion.id) - (this.props.fromVersion&&this.props.fromVersion.id)) === 1;
-    let wcmcChangeLogUrl = 'https://www.protectedplanet.net/en/resources/' + (this.props.toVersion&&this.props.toVersion.title.toLowerCase().replace(" ","-")) + '-update-of-the-wdpa';
+    let wcmcChangeLogUrl = 'https://www.protectedplanet.net/en/resources/' + (this.props.toVersion&&this.props.toVersion.title.toLowerCase().replace(" ","-")) + '-update-of-the-wdpa-and-wd-oecm';
     return (
       <React.Fragment>
           <div className={'appBar'}>

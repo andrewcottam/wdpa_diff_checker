@@ -112,7 +112,9 @@ class App extends React.Component {
   }
   async getDateArray() {
     //set the first date of the available data as 01/08/2019
-    let d = new Date(2019, 7, 1);
+    // let d = new Date(2019, 7, 1);
+    //set the first date of the available data as 01/01/2022
+    let d = new Date(2022, 1, 1);
     let today = new Date();
     let dateArray = [];
     let callCount = 0;
