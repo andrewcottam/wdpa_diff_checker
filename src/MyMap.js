@@ -24,7 +24,7 @@ class MyMap extends React.Component {
   }
   componentDidMount(){
     //instantiate the map
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYmxpc2h0ZW4iLCJhIjoiMEZrNzFqRSJ9.0QBRA2HxTb8YHErUFRMPZg';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y290dGFtIiwiYSI6ImNsY3N4a2NobTBmNngzcG14eDk4eG1naTIifQ.HXELxtASfyBP6W8Koqe4YQ';
     this.map = new mapboxgl.Map({
       container: 'map',
       style: window.MAP_STYLE_DEFAULT,
