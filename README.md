@@ -10,7 +10,7 @@ Available https://andrewcottam.github.io/wdpa_diff_checker/build/index.html
 4. Create WDPA diff data
 
 # 3. Load the WDPA into a database
-In this case the Oct 2024 version into localhost:
+In this case the Oct 2024 File Geodatabase into localhost:
 ```
 curl https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_Oct2024_Public.zip --output ~/Downloads/WDPA_Oct2024_Public.zip
 cd ~/Downloads
@@ -20,7 +20,7 @@ ogr2ogr -f "PostgreSQL" PG:"host=192.168.86.165 dbname=gis user=andrew password=
         -sql "select * from WDPA_poly_Oct2024" \
         -nln wdpa_oct_2024 -progress --config OGR_ORGANIZE_POLYGONS SKIP
 ```
-In this case the Oct 2024 version into my andrewcottam-default joint-research-center database:
+In this case the Oct 2024 File Geodatabase into my andrewcottam-default joint-research-center database:
 ```
 curl https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_Oct2024_Public.zip --output WDPA_Oct2024_Public.zip
 unzip WDPA_Oct2024_Public.zip 'WDPA_Oct2024_Public.gdb/*'
