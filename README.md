@@ -26,11 +26,11 @@ ogr2ogr -f "PostgreSQL" PG:"host=192.168.86.165 dbname=gis user=andrew password=
         -sql "select * from WDPA_poly_Oct2024" \
         -nln wdpa_oct_2024 -progress --config OGR_ORGANIZE_POLYGONS SKIP
 ```
-In this case the Oct 2024 File Geodatabase into my andrewcottam-default joint-research-center database:
+In this case the Oct 2024 File Geodatabase into my Google Cloud Platform database:
 ```
 curl https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_Oct2024_Public.zip --output WDPA_Oct2024_Public.zip
 unzip WDPA_Oct2024_Public.zip 'WDPA_Oct2024_Public.gdb/*'
-ogr2ogr -f "PostgreSQL" PG:"host=34.154.188.47 dbname=joint-research-centre user=postgres password=thargal88" \
+ogr2ogr -f "PostgreSQL" PG:"host=<HOST> dbname=<DBNAME> user=<USER> password=<PASSWORD>" \
         WDPA_Oct2024_Public.gdb \
         -sql "select * from WDPA_poly_Oct2024" \
         -nln "wdpa.wdpa_oct_2024" -progress --config OGR_ORGANIZE_POLYGONS SKIP
