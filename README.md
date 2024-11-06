@@ -16,7 +16,7 @@ docker run --rm -it --name postgis -p 5432:5432 -v $HOME/Documents/postgres_data
 ```
 
 # 2. Load the WDPA into a database
-In this case the Oct 2024 File Geodatabase into localhost (if the IP address doesnt work, use localhost):
+In this case the Oct 2024 File Geodatabase into localhost (if the IP address doesnt work, use localhost): 
 ```
 curl https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_Oct2024_Public.zip --output ~/Downloads/WDPA_Oct2024_Public.zip
 cd ~/Downloads
